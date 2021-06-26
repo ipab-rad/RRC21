@@ -1,12 +1,12 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>rrc_example_package</name>
+  <name>rrc21</name>
   <version>2.0.0</version>
   <description>
-      Example package for the Real Robot Challenge Submission System.
+      Real Robot Challenge Submission from the RAD group, University of Edinburgh.
   </description>
 
-  <maintainer email="felix.widmaier@tue.mpg.de">Felix Widmaier</maintainer>
+  <maintainer email="a.kamireddypalli@sms.ed.ac.uk">Aditya Kamireddypalli</maintainer>
 
   <license>BSD 3-clause</license>
 
@@ -16,6 +16,7 @@
 
   <exec_depend>robot_fingers</exec_depend>
   <exec_depend>robot_interfaces</exec_depend>
+  <exec_depend>ament_index_python</exec_depend>
 
   <export>
     <build_type>ament_python</build_type>

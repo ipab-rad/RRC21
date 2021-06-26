@@ -1,0 +1,28 @@
+running egg_info
+writing build/rrc21/rrc21.egg-info/PKG-INFO
+writing dependency_links to build/rrc21/rrc21.egg-info/dependency_links.txt
+writing entry points to build/rrc21/rrc21.egg-info/entry_points.txt
+writing requirements to build/rrc21/rrc21.egg-info/requires.txt
+writing top-level names to build/rrc21/rrc21.egg-info/top_level.txt
+reading manifest file 'build/rrc21/rrc21.egg-info/SOURCES.txt'
+writing manifest file 'build/rrc21/rrc21.egg-info/SOURCES.txt'
+running build
+running build_py
+copying submission/rrc_example_package/solution/run_local_episode_rev.py -> /home/aditya/Documents/projects/rrc_ws/rrc_example/src/rrc_example_package/build/rrc21/build/lib/rrc_example_package/solution
+running install
+running install_lib
+copying /home/aditya/Documents/projects/rrc_ws/rrc_example/src/rrc_example_package/build/rrc21/build/lib/rrc_example_package/solution/run_local_episode_rev.py -> /home/aditya/Documents/projects/rrc_ws/rrc_example/src/rrc_example_package/install/rrc21/lib/python3.8/site-packages/rrc_example_package/solution
+byte-compiling /home/aditya/Documents/projects/rrc_ws/rrc_example/src/rrc_example_package/install/rrc21/lib/python3.8/site-packages/rrc_example_package/solution/run_local_episode_rev.py to run_local_episode_rev.cpython-38.pyc
+running install_data
+running install_egg_info
+removing '/home/aditya/Documents/projects/rrc_ws/rrc_example/src/rrc_example_package/install/rrc21/lib/python3.8/site-packages/rrc21-2.0.0-py3.8.egg-info' (and everything under it)
+Copying build/rrc21/rrc21.egg-info to /home/aditya/Documents/projects/rrc_ws/rrc_example/src/rrc_example_package/install/rrc21/lib/python3.8/site-packages/rrc21-2.0.0-py3.8.egg-info
+running install_scripts
+Installing demo_gym script to /home/aditya/Documents/projects/rrc_ws/rrc_example/src/rrc_example_package/install/rrc21/lib/rrc21
+Installing dice_example_with_gym script to /home/aditya/Documents/projects/rrc_ws/rrc_example/src/rrc_example_package/install/rrc21/lib/rrc21
+Installing real_move_up_and_down script to /home/aditya/Documents/projects/rrc_ws/rrc_example/src/rrc_example_package/install/rrc21/lib/rrc21
+Installing real_trajectory_example_with_gym script to /home/aditya/Documents/projects/rrc_ws/rrc_example/src/rrc_example_package/install/rrc21/lib/rrc21
+Installing run_local_episode script to /home/aditya/Documents/projects/rrc_ws/rrc_example/src/rrc_example_package/install/rrc21/lib/rrc21
+Installing sim_move_up_and_down script to /home/aditya/Documents/projects/rrc_ws/rrc_example/src/rrc_example_package/install/rrc21/lib/rrc21
+Installing sim_trajectory_example_with_gym script to /home/aditya/Documents/projects/rrc_ws/rrc_example/src/rrc_example_package/install/rrc21/lib/rrc21
+writing list of installed files to '/home/aditya/Documents/projects/rrc_ws/rrc_example/src/rrc_example_package/build/rrc21/install.log'

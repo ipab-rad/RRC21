@@ -23,9 +23,32 @@ evaluate the actual performance of the policy.
 import argparse
 import json
 
+from env.make_env import make_env
+from trifinger_simulation.tasks import move_cube
+from trifinger_simulation.tasks import move_cube_on_trajectory as task
+from mp.utils import set_seed
+from combined_code import create_state_machine
+
 from rrc_example_package import cube_trajectory_env
 from rrc_example_package.example import PointAtTrajectoryPolicy
 
+def _init_env(goal_pose_dict, difficulty):
+    eval_config = {
+        'action_space': 'torque_and_position',
+        'frameskip': 3,
+        'reward_fn': 'compute_reward',
+        'termination_fn': 'no_termination',
+        'initializer': 'random_init',
+        'monitor': False,
+        'episode_length': task.EPISODE_LENGTH,
+        'visualization': False,
+        'sim': True,
+        'rank': 0
+    }
+
+    set_seed(0)
+    env = make_env(goal_pose_dict, difficulty, **eval_config)
+    return env
 
 class RandomPolicy:
     """Dummy policy which uses random actions."""
@@ -53,32 +76,36 @@ def main():
     args = parser.parse_args()
 
     # TODO: Replace with your environment if you used a custom one.
-    env = cube_trajectory_env.SimCubeTrajectoryEnv(
-        goal_trajectory=args.trajectory,
-        action_type=cube_trajectory_env.ActionType.POSITION,
-        # IMPORTANT: Do not enable visualisation here, as this will result in
-        # invalid log files (unfortunately the visualisation slightly influence
-        # the behaviour of the physics in pyBullet...).
-        visualization=False,
-    )
+    # env = cube_trajectory_env.SimCubeTrajectoryEnv(
+    #     goal_trajectory=args.trajectory,
+    #     action_type=cube_trajectory_env.ActionType.POSITION,
+    #     # IMPORTANT: Do not enable visualisation here, as this will result in
+    #     # invalid log files (unfortunately the visualisation slightly influence
+    #     # the behaviour of the physics in pyBullet...).
+    #     visualization=False,
+    # )
+
+    env = _init_env(args.trajectory, 3)
+    state_machine = create_state_machine(3, 'mp-pg', env, False, False)
 
     # TODO: Replace this with your model
     # policy = RandomPolicy(env.action_space)
-    policy = PointAtTrajectoryPolicy(env.action_space, args.trajectory)
+    # policy = PointAtTrajectoryPolicy(env.action_space, args.trajectory)
 
     # Execute one episode.  Make sure that the number of simulation steps
     # matches with the episode length of the task.  When using the default Gym
     # environment, this is the case when looping until is_done == True.  Make
     # sure to adjust this in case your custom environment behaves differently!
-    is_done = False
     observation = env.reset()
+    state_machine.reset()
+    is_done = False
     accumulated_reward = 0
     t = 0
     while not is_done:
         # action = policy.predict(observation)
-        action = policy.predict(observation, t)
+        action = state_machine(observation)
         observation, reward, is_done, info = env.step(action)
-        t = info["time_index"]
+        t = env.info["time_index"]
         accumulated_reward += reward
 
     print("Accumulated reward: {}".format(accumulated_reward))

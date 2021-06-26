@@ -1,3 +1,51 @@
+# Stuff to do to get the code base running
+The `README` includes stuff from the original example repo as well. Ignore that as I have changed a little bit from there. Follow the folloowing outluined steps. First, clone the repo into a `ros2` ws. This would have a structure of the sort `ws/src/{this repo}`. Next, Follow the singularity steps.
+
+## Singularity
+This is the docker type container to run to execute your code in simulation. Steps are as follows:
+- Download the `singularity` debian file from [here](https://people.tuebingen.mpg.de/felixwidmaier/rrc2021/singularity.html)
+- run `sudo apt install ./<.deb singularity file>`
+- pull the challenge singularity image by running `$ singularity pull library://felix.widmaier/rrc/rrc2021:latest ` into your {this repo} folder.
+- After that run `singularity build --fakeroot {sif file from previous step} ./image.def`. Make sure that the sif inside the `image.def` file points to the one retrieved from the previous step.
+
+The previous steps should have built the required singularity container we need for running the stuff we have until now.
+
+Next, launching the singularity container and running the pre-qual visualisation script.
+
+```
+export SINGULARITYENV_DISPLAY=$DISPLAY
+singularity shell --cleanenv --no-home -B path/to/workspace path/to/rrc2021.sif
+```
+This should open a singularity shell. Make sure it points to the root of your workspace, i.e it should only have the `./src`
+
+```
+source /setup.bash
+colcon build
+```
+
+This should build the workspace. You should have a `build`, `install`, `log` file in your workspace.
+
+```
+. ./install/local_setup.bash
+```
+
+You are now ready to run scripts in the package. To get started just launch the following and hopefully you can see the bots performing a trajectory
+
+
+```
+ros2 run rrc21 run_local_episode 4 mp-pg
+```
+
+
+
+
+
+================================================
+
+
+
+
+
 Example Package for the Real Robot Challenge 2021
 =================================================
 
