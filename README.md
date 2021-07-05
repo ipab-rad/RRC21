@@ -1,5 +1,5 @@
 # Stuff to do to get the code base running
-The `README` includes stuff from the original example repo as well. Ignore that as I have changed a little bit from there. Follow the folloowing outluined steps. First, clone the repo into a `ros2` ws. This would have a structure of the sort `ws/src/{this repo}`. Next, Follow the singularity steps.
+The `README` includes stuff from the original example repo as well. Ignore that as I have changed a little bit from there. Follow the outlined steps. First, clone the repo into a `ros2` ws. This would have a structure of the sort `ws/src/{this repo}`. Next, Follow the singularity steps.
 
 ## Singularity
 This is the docker type container to run to execute your code in simulation. Steps are as follows:
@@ -41,6 +41,8 @@ ros2 run rrc21 run_local_episode 4 mp-pg
 
 
 ================================================
+
+** Ignore under this **
 
 
 
