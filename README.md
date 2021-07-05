@@ -36,7 +36,8 @@ You are now ready to run scripts in the package. To get started just launch the 
 ros2 run rrc21 run_local_episode 4 mp-pg
 ```
 
-
+## Collaboration points to keep in mind
+Obviously this is a work in progress. So it would be better if we track issues more systematically. Please raise an issue for any problem faced while trying to run this code base, communicating the problem as succinctly as possible. 
 
 
 
