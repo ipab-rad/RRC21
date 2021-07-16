@@ -7,6 +7,21 @@ from env.make_env import make_env
 from trifinger_simulation.tasks import move_cube
 from .residual_wrappers import ResidualWrapper, RandomizedEnvWrapper
 
+goal_dict = {
+    "_goal":  [
+        [0, [0, 0, 0.08]],
+        [10000, [0, 0.07, 0.08]],
+        [20000, [0.07, 0.07, 0.08]],
+        [30000, [0.07, 0, 0.08]],
+        [40000, [0.07, -0.07, 0.08]],
+        [50000, [0, -0.07, 0.08]],
+        [60000, [-0.07, -0.07, 0.06]],
+        [70000, [-0.07, 0, 0.08]],
+        [80000, [-0.07, 0.07, 0.08]],
+        [90000, [0, 0.07, 0.08]],
+        [100000, [0, 0, 0.08]]
+    ]
+}
 
 @gin.configurable
 def make_training_env(nenv, state_machine, goal_difficulty, action_space,
@@ -17,17 +32,18 @@ def make_training_env(nenv, state_machine, goal_difficulty, action_space,
                       max_torque=0.1):
 
     # dummy goal dict
-    goal = move_cube.sample_goal(goal_difficulty)
+    # goal = move_cube.sample_goal(goal_difficulty)
 
-    goal_dict = {
-        'position': goal.position,
-        'orientation': goal.orientation
-    }
+    # goal_dict = {
+    #     'position': goal.position,
+    #     'orientation': goal.orientation
+    # }
+    goal_pose = goal_dict["_goal"]
 
     def _env(rank):
         def _thunk():
             env = make_env(
-                cube_goal_pose=goal_dict,
+                cube_goal_pose=goal_pose,
                 goal_difficulty=goal_difficulty,
                 action_space=action_space,
                 frameskip=frameskip,

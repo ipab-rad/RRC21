@@ -19,5 +19,8 @@
     trajectory - initialise in `reset`
 - [X] Use the example `env` and modify how the reward is being computed
 - [X] How is the state machine informed about these goals
-- [ ] Running submission checklist
-  - [ ] turn visualisation false
+- [X] Running submission checklist
+  - [X] turn visualisation false
+- [ ] pull updated benchmark repo into another branch
+  - [ ] integrate and test `cic-cg` and `cpc-tg` from original repo
+- [ ] submit existing running solution to real robot.

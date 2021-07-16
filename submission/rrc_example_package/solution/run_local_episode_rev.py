@@ -45,7 +45,8 @@ def _init_env(goal_pose_dict, difficulty):
 
 def main():
     parser = argparse.ArgumentParser('args')
-    parser.add_argument('difficulty', type=int, default=3)
+    parser.add_argument('difficulty', help="specify difficulty level of task \
+                        (valid only for 2020 version of the competition)", type=int, default=3)
 
     # parser.add_argument(
     #     "trajectory",
