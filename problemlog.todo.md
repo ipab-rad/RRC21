@@ -24,3 +24,6 @@
 - [ ] pull updated benchmark repo into another branch
   - [ ] integrate and test `cic-cg` and `cpc-tg` from original repo
 - [ ] submit existing running solution to real robot.
+  - [ ] update `real_trajectory_example_with_gym.py`
+  - [ ] test on simulation
+  - [ ] submit job

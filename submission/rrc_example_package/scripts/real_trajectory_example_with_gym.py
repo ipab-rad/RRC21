@@ -7,8 +7,10 @@ using a dummy policy.
 import json
 import sys
 
+from env.make_env import make_env
 from rrc_example_package import cube_trajectory_env
 from rrc_example_package.example import PointAtTrajectoryPolicy
+from combined_code import create_state_machine
 
 
 class RandomPolicy:
@@ -28,18 +30,20 @@ def main():
 
     env = cube_trajectory_env.RealRobotCubeTrajectoryEnv(
         goal,
-        cube_trajectory_env.ActionType.POSITION,
+        cube_trajectory_env.ActionType.TORQUE_AND_POSITION,
         step_size=1,
     )
 
     # policy = RandomPolicy(env.action_space)
-    policy = PointAtTrajectoryPolicy(env.action_space, goal)
+    # policy = PointAtTrajectoryPolicy(env.action_space, goal)
+    state_machine = create_state_machine(3, 'mp-pg', env, False, False)
 
     observation = env.reset()
     t = 0
     is_done = False
     while not is_done:
-        action = policy.predict(observation, t)
+        # action = policy.predict(observation, t)
+        action = state_machine(observation)
         observation, reward, is_done, info = env.step(action)
         t = info["time_index"]
         print("reward:", reward)
