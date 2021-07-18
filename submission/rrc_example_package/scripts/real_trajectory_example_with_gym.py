@@ -6,12 +6,32 @@ using a dummy policy.
 """
 import json
 import sys
+from mp.utils import set_seed
 
+from trifinger_simulation.tasks import move_cube_on_trajectory as task
 from combined_code import create_state_machine
 from env.make_env import make_env
 from rrc_example_package import cube_trajectory_env
 from rrc_example_package.example import PointAtTrajectoryPolicy
 
+
+def _init_env(goal_pose_dict, difficulty):
+    eval_config = {
+        'action_space': 'torque_and_position',
+        'frameskip': 3,
+        'reward_fn': 'compute_reward',
+        'termination_fn': 'no_termination',
+        'initializer': 'random_init',
+        'monitor': False,
+        'episode_length': task.EPISODE_LENGTH,
+        'visualization': False,
+        'sim': False,
+        'rank': 0
+    }
+
+    set_seed(0)
+    env = make_env(goal_pose_dict, difficulty, **eval_config)
+    return env
 
 class RandomPolicy:
     """Dummy policy which uses random actions."""
@@ -28,13 +48,14 @@ def main():
     goal_json = sys.argv[1]
     goal = json.loads(goal_json)
 
-    env = cube_trajectory_env.RealRobotCubeTrajectoryEnv(
-        goal_difficulty=3,
-        goal_trajectory=goal,
-        action_type=cube_trajectory_env.ActionType.TORQUE_AND_POSITION,
-        step_size=1,
-        simulation=True,
-    )
+    # env = cube_trajectory_env.RealRobotCubeTrajectoryEnv(
+    #     goal_difficulty=3,
+    #     goal_trajectory=goal,
+    #     action_type=cube_trajectory_env.ActionType.TORQUE_AND_POSITION,
+    #     step_size=1,
+    #     simulation=True,
+    # )
+    env = _init_env(goal, 3)
 
     # policy = RandomPolicy(env.action_space)
     # policy = PointAtTrajectoryPolicy(env.action_space, goal)
