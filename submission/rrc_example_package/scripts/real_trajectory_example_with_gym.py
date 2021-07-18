@@ -47,6 +47,7 @@ def main():
     # the goal is passed as JSON string
     goal_json = sys.argv[1]
     goal = json.loads(goal_json)
+    print('goal: {}'.format(goal))
 
     # env = cube_trajectory_env.RealRobotCubeTrajectoryEnv(
     #     goal_difficulty=3,
