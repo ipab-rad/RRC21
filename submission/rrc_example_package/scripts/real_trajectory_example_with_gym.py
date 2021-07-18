@@ -33,6 +33,7 @@ def main():
         goal_trajectory=goal,
         action_type=cube_trajectory_env.ActionType.TORQUE_AND_POSITION,
         step_size=1,
+        simulation=True,
     )
 
     # policy = RandomPolicy(env.action_space)

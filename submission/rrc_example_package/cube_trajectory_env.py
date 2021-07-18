@@ -43,6 +43,7 @@ class BaseCubeTrajectoryEnv(gym.GoalEnv):
         goal_trajectory: typing.Optional[task.Trajectory] = None,
         action_type: ActionType = ActionType.POSITION,
         step_size: int = 1,
+        simulation: bool = False,
     ):
         """Initialize.
 
@@ -61,6 +62,7 @@ class BaseCubeTrajectoryEnv(gym.GoalEnv):
             task.validate_goal(goal_trajectory)
         self.goal = goal_trajectory
 
+        self.simulation = simulation
         self.action_type = action_type
 
         if step_size < 1:
