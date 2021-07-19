@@ -60,11 +60,8 @@ class RandomPolicy:
 
 def main():
     # the goal is passed as JSON string
-    print("Booyahkasha")
     goal_json = sys.argv[1]
-    print("json file: {}".format(goal_json))
     goal = json.loads(goal_json)
-    print('goal: {}'.format(goal))
 
     # env = cube_trajectory_env.RealRobotCubeTrajectoryEnv(
     #     goal_difficulty=3,
@@ -73,7 +70,7 @@ def main():
     #     step_size=1,
     #     simulation=True,
     # )
-    env = _init_env(goal['_goal'], 3)
+    env = _init_env(goal, 3)
 
     # policy = RandomPolicy(env.action_space)
     # policy = PointAtTrajectoryPolicy(env.action_space, goal)
