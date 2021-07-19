@@ -323,8 +323,8 @@ class RealRobotCubeEnv(gym.GoalEnv):
         if self.simulation:
             self._reset_direct_simulation()
         else:
-            self._reset_platform_frontend()
             self._reset_direct_simulation()
+            self._reset_platform_frontend()
         if self.visualization:
             self.cube_viz.reset()
 
@@ -362,7 +362,9 @@ class RealRobotCubeEnv(gym.GoalEnv):
         initial_object_pose = task.move_cube.Pose(position=task.INITIAL_CUBE_POSITION)
         # initialize simulation
         if self.initializer is None:
-            initial_object_pose = move_cube.sample_goal(difficulty=-1)
+            # initial_object_pose = move_cube.sample_goal(difficulty=-1)
+            self.goal['position'] = np.asarray(task.get_active_goal(self.info['trajectory'], 0))
+            self.goal['orientation'] = initial_object_pose.orientation
         else:
             # initial_object_pose = self.initializer.get_initial_state()
             # initial_object_pose.position = np.asarray(task.get_active_goal(self.info['trajectory'], 0))

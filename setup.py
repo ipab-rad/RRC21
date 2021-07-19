@@ -34,6 +34,7 @@ setuptools.setup(
             "real_move_up_and_down = rrc_example_package.scripts.real_move_up_and_down:main",
             "sim_move_up_and_down = rrc_example_package.scripts.sim_move_up_and_down:main",
             "real_trajectory_example_with_gym = rrc_example_package.scripts.real_trajectory_example_with_gym:main",
+            "real_trajectory_example_with_gym_dup = rrc_example_package.scripts.real_trajectory_example_with_gym_dup:main",
             "sim_trajectory_example_with_gym = rrc_example_package.scripts.sim_trajectory_example_with_gym:main",
             "dice_example_with_gym = rrc_example_package.scripts.dice_example_with_gym:main",
             "demo_gym = rrc_example_package.solution.demo_gym:main",
