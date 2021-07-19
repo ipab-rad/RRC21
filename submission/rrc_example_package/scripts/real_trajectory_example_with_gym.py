@@ -13,6 +13,21 @@ from combined_code import create_state_machine
 from env.make_env import make_env
 from rrc_example_package import cube_trajectory_env
 from rrc_example_package.example import PointAtTrajectoryPolicy
+# goal = {
+#     "_goal":  [
+#         [0, [0, 0, 0.08]],
+#         [10000, [0, 0.07, 0.08]],
+#         [20000, [0.07, 0.07, 0.08]],
+#         [30000, [0.07, 0, 0.08]],
+#         [40000, [0.07, -0.07, 0.08]],
+#         [50000, [0, -0.07, 0.08]],
+#         [60000, [-0.07, -0.07, 0.06]],
+#         [70000, [-0.07, 0, 0.08]],
+#         [80000, [-0.07, 0.07, 0.08]],
+#         [90000, [0, 0.07, 0.08]],
+#         [100000, [0, 0, 0.08]]
+#     ]
+# }
 
 
 def _init_env(goal_pose_dict, difficulty):
@@ -47,6 +62,7 @@ def main():
     # the goal is passed as JSON string
     print("Booyahkasha")
     goal_json = sys.argv[1]
+    print("json file: {}".format(goal_json))
     goal = json.loads(goal_json)
     print('goal: {}'.format(goal))
 
@@ -57,7 +73,7 @@ def main():
     #     step_size=1,
     #     simulation=True,
     # )
-    env = _init_env(goal, 3)
+    env = _init_env(goal['_goal'], 3)
 
     # policy = RandomPolicy(env.action_space)
     # policy = PointAtTrajectoryPolicy(env.action_space, goal)

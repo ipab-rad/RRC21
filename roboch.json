@@ -1,7 +1,7 @@
 {
-	"repository": "git@github.com:Kzernobog/RRC21.git",
+	"repository": "git@github.com:ipab-rad/RRC21.git",
 	"branch": "master",
 	"email": "a.kamireddypalli@sms.ed.ac.uk",
-	"git_deploy_key": "rrc_mine",
+	"git_deploy_key": "rrc",
 	"singularity_image": "rrc2021_latest.sif"
 }
