@@ -265,9 +265,18 @@ class RealRobotCubeEnv(gym.GoalEnv):
                 observation = self._create_observation(t, action)
                 self.observation_list.append(observation)
             else:
-                t = self.real_platform.append_desired_action(robot_action)
-                observation = self._create_observation(t, action)
-                self._set_sim_state(observation)
+                try:
+                    t = self.real_platform.append_desired_action(robot_action)
+                    observation = self._create_observation(t, action)
+                    self._set_sim_state(observation)
+                except:
+                    is_done = True
+                    print('is_done is True. Episode terminates.')
+                    print('episode length', self.episode_length)
+                    print('step_count', self.step_count)
+                    self.save_custom_logs()
+                    return prev_observation, 0.0, is_done, self.info.copy()
+
 
             if self.prev_observation is None:
                 self.prev_observation = observation
