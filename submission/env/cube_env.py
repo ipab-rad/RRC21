@@ -275,7 +275,7 @@ class RealRobotCubeEnv(gym.GoalEnv):
                     print('episode length', self.episode_length)
                     print('step_count', self.step_count)
                     self.save_custom_logs()
-                    return prev_observation, 0.0, is_done, self.info.copy()
+                    return self.prev_observation, 0.0, is_done, self.info.copy()
 
 
             if self.prev_observation is None:
