@@ -450,18 +450,33 @@ class RealRobotCubeEnv(gym.GoalEnv):
 
     def _gym_action_to_robot_action(self, gym_action):
         # construct robot action depending on action type
-        if self.action_type == ActionType.TORQUE:
-            robot_action = trifinger_simulation.action.Action(torque=gym_action, position=INIT_JOINT_CONF  )
-        elif self.action_type == ActionType.POSITION:
-            robot_action = trifinger_simulation.action.Action(
-                torque=trifingerpro_limits.robot_torque.default, position=gym_action
-            )
-        elif self.action_type == ActionType.TORQUE_AND_POSITION:
-            robot_action = trifinger_simulation.action.Action(
-                torque=gym_action["torque"], position=gym_action["position"]
-            )
+        if self.simulation:
+            if self.action_type == ActionType.TORQUE:
+                robot_action = trifinger_simulation.action.Action(torque=gym_action, position=INIT_JOINT_CONF  )
+            elif self.action_type == ActionType.POSITION:
+                robot_action = trifinger_simulation.action.Action(
+                    torque=trifingerpro_limits.robot_torque.default, position=gym_action
+                )
+            elif self.action_type == ActionType.TORQUE_AND_POSITION:
+                robot_action = trifinger_simulation.action.Action(
+                    torque=gym_action["torque"], position=gym_action["position"]
+                )
+            else:
+                raise ValueError("Invalid action_type")
         else:
-            raise ValueError("Invalid action_type")
+            if self.action_type == ActionType.TORQUE:
+                robot_action = robot_interfaces.trifinger.Action(torque=gym_action, position=INIT_JOINT_CONF)
+            elif self.action_type == ActionType.POSITION:
+                robot_action = robot_interfaces.trifinger.Action(
+                    torque=trifingerpro_limits.robot_torque.default,
+                    position=gym_action)
+            elif self.action_type == ActionType.TORQUE_AND_POSITION:
+                robot_action = robot_interfaces.trifinger.Action(
+                    torque=gym_action["torque"], position=gym_action["position"]
+                )
+            else:
+                raise ValueError("Invalid action_type")
+
 
         return robot_action
 
