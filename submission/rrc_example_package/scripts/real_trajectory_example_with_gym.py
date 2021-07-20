@@ -60,6 +60,7 @@ class RandomPolicy:
 
 def main():
     # the goal is passed as JSON string
+    print("entered main function")
     goal_json = sys.argv[1]
     goal = json.loads(goal_json)
 
