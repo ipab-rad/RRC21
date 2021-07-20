@@ -60,7 +60,6 @@ class RandomPolicy:
 
 def main():
     # the goal is passed as JSON string
-    print("entered main function")
     goal_json = sys.argv[1]
     goal = json.loads(goal_json)
 
@@ -86,7 +85,6 @@ def main():
         action = state_machine(observation)
         observation, reward, is_done, info = env.step(action)
         t = info["time_index"]
-        print("reward:", reward)
 
         accumulated_reward += reward
 

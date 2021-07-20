@@ -64,8 +64,8 @@ def make_env(cube_goal_pose, goal_difficulty, action_space, frameskip=1,
     env.action_space.seed(seed=rank)
     env = wrappers.NewToOldObsWrapper(env)
     env = wrappers.AdaptiveActionSpaceWrapper(env)
-    if not sim:
-        env = wrappers.TimingWrapper(env, 0.001)
+    # if not sim:
+    #     env = wrappers.TimingWrapper(env, 0.001)
     if visualization:
         env = wrappers.PyBulletClearGUIWrapper(env)
     if monitor:
