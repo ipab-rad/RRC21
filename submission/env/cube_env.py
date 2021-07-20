@@ -333,7 +333,14 @@ class RealRobotCubeEnv(gym.GoalEnv):
         # need to already do one step to get initial observation
         # TODO disable frameskip here?
         # self.prev_observation, _, _, _ = self.step(self.initial_action)
-        self.prev_observation = self._create_observation(0, self.initial_action)
+        if self.simulation:
+            self.prev_observation = self._create_observation(0, self.initial_action)
+        else:
+            # need to send a zero torque command to the bot to activate it
+            temp_action = self._gym_action_to_robot_action(self.initial_action)
+            t = self.real_platform.append_desired_action(temp_action)
+            self.prev_observation = self._create_observation(t,
+                                                             self.initial_action)
 
         return self.prev_observation
 
