@@ -1,11 +1,19 @@
-# Stuff to do to get the code base running
-The `README` includes stuff from the original example repo as well. Ignore that as I have changed a little bit from there. Follow the outlined steps. First, clone the repo into a `ros2` ws. This would have a structure of the sort `ws/src/{this repo}`. Next, Follow the singularity steps.
+# Simulation
+
+The `README` includes stuff from the original example repo as well. Ignore that
+as I have changed a little bit from there. Follow the outlined steps. First,
+clone the repo into a `ros2` ws. This would have a structure of the sort
+`ws/src/{this repo}`. Next, Follow the singularity steps.
 
 ## Singularity
+
 This is the docker type container to run to execute your code in simulation. Steps are as follows:
 - Download the `singularity` debian file from [here](https://people.tuebingen.mpg.de/felixwidmaier/rrc2021/singularity.html)
 - run `sudo apt install ./<.deb singularity file>`
-- pull the challenge singularity image by running `$ singularity pull library://felix.widmaier/rrc/rrc2021:latest ` into your {this repo} folder.
+- pull the challenge singularity image by running into your {this repo} folder.
+```
+singularity pull library://felix.widmaier/rrc/rrc2021:latest
+```
 - After that run `singularity build --fakeroot {sif file from previous step} ./image.def`. Make sure that the sif inside the `image.def` file points to the one retrieved from the previous step.
 
 The previous steps should have built the required singularity container we need for running the stuff we have until now.
@@ -36,91 +44,67 @@ You are now ready to run scripts in the package. To get started just launch the 
 ros2 run rrc21 run_local_episode 4 mp-pg
 ```
 
+# Stage 1 - Move Cube on Trajectory
+
+## Workflow setup
+
+**Note: Ensure that the previous steps are working**
+
+The experimental workflow is as follows:
+- develop your code and test on robot emulator simulation (different from the
+  previous stage).
+- commit your changes and push to remote git repo.
+- `ssh` into the robot server and run your pushed code.
+
+### Robot Emulator
+
+The idea here is to sanity check your cod in a simulation before submitting it
+to the actual bots
+
+- If you have followed the previous steps, `singularity` should have been
+  installed in your system. Ensure that you have python3 installed.
+- install ROS2, prefereably `ros2-foxy` from [here](https://docs.ros.org/en/foxy/Installation.html).
+- clone the emulator from [here](https://github.com/open-dynamic-robot-initiative/trifingerpro_runner), anywhere on your system. All of the code testing happens from here.
+
+Run the following to setup your testing environment
+```
+export SINGULARITYENV_DISPLAY=$DISPLAY
+source /opt/ros/foxy/setup.bash
+```
+Now, create a launch `launch.sh` script inside the `trifingerpro_runner` repo you just
+cloned. Add the following inside. 
+```
+./run_simulation.py --output-dir ~/output \
+                    --repository /path/to/your/experiment/code/.git \
+                    --backend-image /path/to/.sif/file/XX.sif \
+                    --task MOVE_CUBE_ON_TRAJECTORY \
+		    --sim-visualize
+```
+
+Make sure your experiment code has been saved and committed as the script
+mentioned underneath uses the `HEAD` commit. Ensure that the output
+directory `~/output` is created.
+
+You should see the output of your experiment's code in the `output` directory.
+
+### Actual Robot
+
+Once the code has been tested in the previous step:
+- update the `branch` and `email` fields in the `roboch.json`
+- copy the `roboch.json` to the remote robot server using
+`scp roboch.json dopeytacos@robots.real-robot-challenge.com:`
+you know where to find the password for this.
+- you can then ssh into the main server and submit a job.
+
+`ssh USERNAME@robots.real-robot-challenge.com`
+
+Once logged in, type `submit` and job will be queued.
+
+Ensure that your code is pushed to the remote repo before submitting.
+
 ## Collaboration points to keep in mind
-Obviously this is a work in progress. So it would be better if we track issues more systematically. Please raise an issue for any problem faced while trying to run this code base, communicating the problem as succinctly as possible. 
+Obviously this is a work in progress. So it would be better if we track issues
+more systematically. Please raise an issue for any problem faced while trying
+to run this code base, communicating the problem as succinctly as possible.
+Let's coordinate experiments and job submission on slack.
 
-
-
-================================================
-
-** Ignore under this **
-
-
-
-
-
-Example Package for the Real Robot Challenge 2021
-=================================================
-
-This is a basic example for a package that can be submitted to the robots of
-the [Real Robot Challenge 2021](https://real-robot-challenge.com).
-
-It is a normal ROS2 Python package that can be build with colcon.  However,
-there are a few special files in the root directory that are needed for
-running/evaluating your submissions.  See the sections on the different
-challenge phases below for more on this.
-
-This example uses purely Python, however, any package type that can be built
-by colcon is okay.  So you can, for example, turn it into a CMake package if you
-want to build C++ code.  For more information on this, see the [ROS2
-documentation](https://docs.ros.org/en/foxy/Tutorials/Creating-Your-First-ROS2-Package.html).
-
-
-Challenge Simulation Phase (Pre-Stage)
---------------------------------------
-
-There are two example scripts using the simulation:
-
-- `sim_move_up_and_down`:  Directly uses the `TriFingerPlatform` class to simply
-  move the robot between two fixed positions.  This is implemented in
-  `rrc_example_package/scripts/sim_move_up_and_down.py`.
-
-- `sim_trajectory_example_with_gym`:  Wraps the robot class in a Gym environment
-  and uses that to run a dummy policy which simply points with one finger on the
-  goal positions of the trajectory.  This is implemented in 
-  `rrc_example_package/scripts/sim_trajectory_example_with_gym.py`.
-
-To execute the examples, [build the
-package](https://people.tuebingen.mpg.de/felixwidmaier/rrc2021/singularity.html#singularity-build-ws)
-and execute
-
-    ros2 run rrc_example_package <example_name>
-
-
-For evaluation of the pre-stage of the challenge, the critical file is the
-`evaluate_policy.py` at the root directory of the package.  This is what is
-going to be executed by `rrc_evaluate_prestage.py` (found in `scripts/`).
-
-For more information, see the [challenge
-documentation](https://people.tuebingen.mpg.de/felixwidmaier/rrc2021/)
-
-`evaluate_policy.py` is only used for the simulation phase and not relevant
-anymore for the later phases that use the real robot.
-
-
-Challenge Real Robot Phases (Stages 1 and 2)
---------------------------------------------
-
-For the challenge phases on the real robots, you need to provide the following
-files at the root directory of the package such that your jobs can executed on
-the robots:
-
-- `run`:  Script that is executed when submitting the package to the robot.
-  This can, for example, be a Python script or a symlink to a script somewhere
-  else inside the repository.  In the given example, it is a shell script
-  running a Python script via `ros2 run`.  This approach would also work for C++
-  executables.  When executed, a JSON string encoding the goal is passed as
-  argument (the exact structure of the goal depends on the current task).
-- `goal.json`:  Optional.  May contain a fixed goal (might be useful for
-  testing/training).  See the documentation of the challenge tasks for more
-  details.
-
-It is important that the `run` script is executable.  For this, you need to do
-two things:
-
-1. Add a shebang line at the top of the file (e.g. `#!/usr/bin/python3` when
-   using Python or `#!/bin/bash` when using bash).
-2. Mark the file as executable (e.g. with `chmod a+x run`).
-
-When inside of `run` you want to call another script using `ros2 run` (as it is
-done in this example), this other script needs to fulfil the same requirements.
