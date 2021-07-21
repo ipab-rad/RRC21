@@ -82,8 +82,7 @@ cloned. Add the following inside.
 ```
 
 Make sure your experiment code has been saved and committed as the script
-mentioned underneath uses the `HEAD` commit. Ensure that the output
-directory `~/output` is created.
+uses the `HEAD` commit. Ensure that the output directory `~/output` is created.
 
 You should see the output of your experiment's code in the `output` directory.
 
