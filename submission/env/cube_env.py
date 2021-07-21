@@ -253,7 +253,8 @@ class RealRobotCubeEnv(gym.GoalEnv):
         for _ in range(num_steps):
 
             # make sure to not exceed the episode length
-            self.step_count += 1
+            if self.simulation:
+                self.step_count += 1
             if self.step_count > self.episode_length:
                 observation = self.prev_observation
                 break
@@ -267,6 +268,7 @@ class RealRobotCubeEnv(gym.GoalEnv):
             else:
                 try:
                     t = self.real_platform.append_desired_action(robot_action)
+                    self.step_count = t
                     observation = self._create_observation(t, action)
                     self._set_sim_state(observation)
                 except:
