@@ -21,10 +21,14 @@
 - [X] How is the state machine informed about these goals
 - [X] Running submission checklist
   - [X] turn visualisation false
-- [ ] pull updated benchmark repo into another branch
-  - [ ] integrate and test `cic-cg` and `cpc-tg` from original repo
-- [ ] submit existing running solution to real robot.
-  - [ ] Check what action type is being sent
-    - [ ] what is the action type to be sent to the robot
-  - [ ] Check if backend starts sending observations according to the felix's
+- [X] pull updated benchmark repo into another branch
+  - [X] integrate and test `cic-cg` and `cpc-tg` from original repo
+- [X] submit existing running solution to real robot.
+  - [X] Check what action type is being sent
+    - [X] what is the action type to be sent to the robot
+  - [X] Check if backend starts sending observations according to the felix's
     reply
+- [X] streamline data and logs from experiments
+  - [X] download and process data
+    - [X] create necessary csvs
+    - [X] create necessary video files for visualisation
