@@ -250,6 +250,47 @@ class GraspSampler(object):
                      self.object_ori, self.T_cube_to_base,
                      self.T_base_to_cube, [0, 1, 2])
 
+class MetricGraspSampler(GraspSampler):
+
+    def __init__(self,
+                env,
+                pos,
+                quat,
+                slacky_collision,
+                halfsize,
+                ignore_collision,
+                avoid_edge_faces,
+                yawing_grasp,
+                allow_partial_sol,
+
+                ):
+        super().__init__(env, 
+                        pos,
+                        quat,
+                        slacky_collision=slacky_collision,
+                        halfsize=halfsize,
+                        ignore_collision=ignore_collision,
+                        avoid_edge_faces=avoid_edge_faces,
+                        yawing_grasp=yawing_grasp,
+                        allow_partial_sol=allow_partial_sol)
+
+    def __call__(self,
+        shrink_region=[0.0, 0.6, 0.0],
+        max_retries=40):
+        retry = 0
+        print("sampling a random grasp...")
+        with keep_state(self.env):
+            while retry < max_retries:
+                print('[GraspSampler] retry count:', retry)
+                points = sample_side_face(3, self.halfsize, self.object_ori,
+                                          shrink_region=shrink_region)
+                tips = self.T_cube_to_base(points)
+                for grasp in self.get_feasible_grasps_from_tips(tips):
+                    return grasp
+                retry += 1
+
+        raise RuntimeError('No feasible grasp is found.')
+
 
 if __name__ == '__main__':
     import pybullet as p
