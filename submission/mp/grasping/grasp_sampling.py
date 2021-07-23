@@ -99,12 +99,41 @@ def get_two_sided_heurictic_grasps(half_size, object_ori):
     return [g1, g2, g3, g4]
 
 
+def get_two_finger_heurictic_grasps(half_size, object_ori):
+    side_centers = get_side_face_centers(half_size, object_ori)
+    ax1 = side_centers[1] - side_centers[0]
+    ax2 = side_centers[3] - side_centers[2]
+    g1 = np.array([
+        side_centers[0],
+        side_centers[1] + 0.5 * ax2,
+        side_centers[1],
+    ])
+    g2 = np.array([
+        side_centers[1],
+        side_centers[0] + 0.5 * ax2,
+        side_centers[0],
+    ])
+    g3 = np.array([
+        side_centers[2],
+        side_centers[3] + 0.5 * ax1,
+        side_centers[3],
+    ])
+    g4 = np.array([
+        side_centers[3],
+        side_centers[2] + 0.5 * ax1,
+        side_centers[2],
+    ])
+    return [g1, g2, g3, g4]
+
+
 def get_all_heuristic_grasps(half_size, object_ori):
     # return (
     #     get_three_sided_heuristic_grasps(half_size, object_ori)
     #     + get_two_sided_heurictic_grasps(half_size, object_ori)
     # )
-    return (get_two_sided_heurictic_grasps(half_size, object_ori)+
+    return (
+        get_two_finger_heurictic_grasps(half_size, object_ori) +
+        get_two_sided_heurictic_grasps(half_size, object_ori) +
         get_three_sided_heuristic_grasps(half_size, object_ori)
     )
 
