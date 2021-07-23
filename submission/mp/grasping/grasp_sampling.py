@@ -210,7 +210,8 @@ class GraspSampler(object):
                 tips = self.T_cube_to_base(points)
                 # NOTE: we sacrifice a bit of speed by not using "yield", however,
                 # context manager doesn't work as we want if we use "yield".
-                # performance drop shouldn't be significant (get_feasible_grasps_from_tips only iterates 6 grasps!).
+                # performance drop shouldn't be significant 
+                # (get_feasible_grasps_from_tips only iterates 6 grasps!).
                 # for grasp in self.get_feasible_grasps_from_tips(tips):
                 #     yield grasp
                 ret += [grasp for grasp in self.get_feasible_grasps_from_tips(tips)]
