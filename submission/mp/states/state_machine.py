@@ -13,6 +13,19 @@ class State(object):
         raise NotImplementedError
 
     def get_action(self, position=None, torque=None, frameskip=1):
+        """Wraps the robot actions in a dictionary
+
+        @param position: list of joint positions
+        @type  position: list
+        @param torque: list of joint torques
+        @type  torque: list
+        @param frameskip: number of time steps to skip
+        @type  frameskip: int
+
+        @return:  returns a dictionary containing {position, torque, frameskip}
+        @rtype :  dict
+
+        """
         return {'position': position, 'torque': torque, 'frameskip': frameskip}
 
 

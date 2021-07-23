@@ -5,13 +5,18 @@ import numpy as np
 
 
 def get_grasp_approach_actions(env, obs, grasp):
+
+    # generates actions to carry out grasp
     action_sequence = ScriptedActions(env, obs['robot_tip_positions'], grasp)
+
+    # estimates pre-grasp pose and joint configuration
     pregrasp_joint_conf, pregrasp_tip_pos = get_safe_pregrasp(
         env, obs, grasp
     )
     if pregrasp_joint_conf is None:
         raise RuntimeError('Feasible heuristic grasp approach is not found.')
 
+    # actual generation of actions to carry out grasp
     action_sequence.add_raise_tips()
     action_sequence.add_heuristic_pregrasp(pregrasp_tip_pos)
     action_sequence.add_grasp(coef=0.6)
