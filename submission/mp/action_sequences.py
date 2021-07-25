@@ -21,6 +21,10 @@ def complete_keypoints(start, goal, unit_length=0.008):
 
 
 class ScriptedActions(object):
+    """
+    class to implement a few scripted actions with a robot, given a grasp and
+    current tip positions
+    """
     def __init__(self, env, robot_tip_positions, grasp, vis_markers=None):
         self.env = env
         self.grasp = grasp
@@ -86,8 +90,16 @@ class ScriptedActions(object):
         )
 
     def add_raise_tips(self, height=CUBOID_SIZE[0] * 1.5):
+        """
+        scripted action sequence to raise the tips of the robiot fingers
+        """
+        # get last tip positions
         target_tip_pos = self.get_last_tippos()
+
+        # increase the height of the tip postions by a certain height
         target_tip_pos[:, 2] = height
+
+        # generate actions to raise the height of the robot fingers
         self.add_move(target_tip_pos, 0.004)
 
     def add_heuristic_pregrasp(self, pregrasp_tip_pos):

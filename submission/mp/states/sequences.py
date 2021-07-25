@@ -5,7 +5,15 @@ import numpy as np
 
 
 class CenteringPrimitiveState(State):
+    """
+    This class implements a primitive state to center the object in the
+    robotic arena.
+    """
     def __init__(self, env):
+        """
+        The constructor utilises the services of the Heuristic grasp and Move
+        to center primitive.
+        """
         super().__init__(env)
         self.heuristic_grasp = HeuristicGraspState(env)
         self.random_grasp = RandomGraspState(env)
@@ -110,6 +118,9 @@ class YawingPrimitiveState(State):
 
 
 class AlignObjectSequenceState(State):
+    """
+    This class implements a primitive state to align the object
+    """
     def __init__(self, env):
         super().__init__(env)
         self.center_object = CenteringPrimitiveState(env)

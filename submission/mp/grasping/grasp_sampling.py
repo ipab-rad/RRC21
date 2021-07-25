@@ -127,15 +127,15 @@ def get_two_finger_heurictic_grasps(half_size, object_ori):
 
 
 def get_all_heuristic_grasps(half_size, object_ori):
-    # return (
-    #     get_three_sided_heuristic_grasps(half_size, object_ori)
-    #     + get_two_sided_heurictic_grasps(half_size, object_ori)
-    # )
     return (
-        get_two_finger_heurictic_grasps(half_size, object_ori) +
-        get_two_sided_heurictic_grasps(half_size, object_ori) +
         get_three_sided_heuristic_grasps(half_size, object_ori)
+        + get_two_sided_heurictic_grasps(half_size, object_ori)
     )
+    # return (
+    #     get_two_finger_heurictic_grasps(half_size, object_ori) +
+    #     get_two_sided_heurictic_grasps(half_size, object_ori) +
+    #     get_three_sided_heuristic_grasps(half_size, object_ori)
+    # )
 
 
 class GraspSampler(object):
