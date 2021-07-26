@@ -1,3 +1,18 @@
+"""
+File: base_states.py
+Author: yourname
+Email: yourname@email.com
+Github: https://github.com/yourname
+Description:
+    This file implements a bunch of base states that are used in a state
+    machine. The `OpenKLoopState` is a generic state inherited by most of the
+    members implemented here. The idea is that each inheriting class
+    implementes its own `get_action_generator` method, that yields actions
+    based on the state that inmplements it. The `OpenLoopState` class
+    overloads the `()` operator. Throughout the project, the overloaded `()`
+    operator is utilised to get actions for the trifinger robot
+"""
+
 from collections import deque
 import numpy as np
 import pybullet as p
@@ -118,11 +133,23 @@ class HeuristicGraspState(OpenLoopState):
     """
 
     def get_action_generator(self, obs, info):
+        """get_action_generator.
+        Generates actions for the heuristic grasp
+
+        Args:
+            obs: observation from the robot
+            info: info about the timestep
+        """
+
+        # retrieve all possible grasps
         grasps = grasping.get_all_heuristic_grasps(
             self.env, obs['object_position'], obs['object_orientation'],
             avoid_edge_faces=False
         )
         actions = None
+
+        # iterate through all grasps and generate actions for the first
+        # feasable grasp
         for grasp in grasps:
             try:
                 actions = grasping.get_grasp_approach_actions(

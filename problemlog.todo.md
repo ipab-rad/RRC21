@@ -32,3 +32,5 @@
   - [X] download and process data
     - [X] create necessary csvs
     - [X] create necessary video files for visualisation
+- [ ] Experiment with different coeff for `add_grasp` functionlity in
+  `grasp_motion`

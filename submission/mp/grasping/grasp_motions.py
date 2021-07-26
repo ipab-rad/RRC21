@@ -5,11 +5,21 @@ import numpy as np
 
 
 def get_grasp_approach_actions(env, obs, grasp):
+    """get_grasp_approach_actions.
+    retrieves grasp approach actions. Given the grasp (cartesian points on the
+    object where the tips need to reach), this funtion returns an action
+    generator that executes the grasp.
+
+    Args:
+        env: robot envrionment
+        obs: observations from the robot
+        grasp: selected grasp
+    """
 
     # generates actions to carry out grasp
     action_sequence = ScriptedActions(env, obs['robot_tip_positions'], grasp)
 
-    # estimates pre-grasp pose and joint configuration
+    # estimates pre-grasp tip positions and joint configuration
     pregrasp_joint_conf, pregrasp_tip_pos = get_safe_pregrasp(
         env, obs, grasp
     )

@@ -7,6 +7,15 @@ import numpy as np
 
 
 def complete_keypoints(start, goal, unit_length=0.008):
+    """complete_keypoints.
+    Fills in intermediate keypoints between start and goal, each separated by
+    `unit_length`
+
+    Args:
+        start: start tip position
+        goal: goal tip position
+        unit_length: unit length of separation between tip positions
+    """
     assert start.shape == goal.shape
     assert len(start.shape) in [1, 2]
     diff = goal - start
@@ -22,9 +31,22 @@ def complete_keypoints(start, goal, unit_length=0.008):
 
 class ScriptedActions(object):
     """
-    class to implement a few scripted actions with a robot, given a grasp and
-    current tip positions
+    ScriptedActions.
+    This class implements certain scripted action sequences that are commonly
+    utuilised in the movement of the trifinger robot fingers.
+
+    Namely:
+        `add_heuristic_pregrasp`: moves the fingers to a given
+        pre-heuristic-grasp position
+        `add_grasp`: moves the fingers to a given grasp position
+        `add_move`: moves the fingers in a certain way - this is a primitive
+        funtion used by all other movement primitives
+        `add_release`: releases grasp
+        `add_move_to_center`
+        `add_raise_tips`
+
     """
+
     def __init__(self, env, robot_tip_positions, grasp, vis_markers=None):
         self.env = env
         self.grasp = grasp
@@ -43,6 +65,16 @@ class ScriptedActions(object):
             self._markers.add(marker_name)
 
     def add_move(self, tip_pos, unit_length, min_height=0.01):
+        """add_move.
+        Adds tipnposition waypoints to the `tip_positions_list`. It calls the
+        `complete_keypoints` to create intermediate waypoints between start and
+        goal positions
+
+        Args:
+            tip_pos: goal tip positions
+            unit_length: unit length of movement between each keypoint
+            min_height: minimum height the robot tips can reach
+        """
         current_tip_pos = self.get_last_tippos()
 
         if np.any(tip_pos[:, 2] < min_height):
@@ -162,6 +194,12 @@ class ScriptedActions(object):
             return np.copy(self.tip_positions_list[-1])
 
     def _tip_positions_to_actions(self):
+        """_tip_positions_to_actions.
+        Applies inverse kinematics and generates joint positions from the
+        given tip positions. Tip positions are stored in
+        `self.tip_positions_list` list. This list is updated by the `add_move`
+        function
+        """
         ik = self.env.pinocchio_utils.inverse_kinematics
 
         actions = []
@@ -182,6 +220,16 @@ class ScriptedActions(object):
         return actions
 
     def get_action_sequence(self, frameskip=1, action_repeat=1, action_repeat_end=1):
+        """get_action_sequence.
+        Generates action sequence for the robot joints to follow along.
+        Converts the tip positions to robot joint positions, adds them to a
+        list and then returns this list of joint and tip positions
+
+        Args:
+            frameskip:
+            action_repeat:
+            action_repeat_end:
+        """
         action_seq = self._tip_positions_to_actions()
         action_seq = repeat(action_seq, action_repeat)
         action_seq += repeat([action_seq[-1]], action_repeat_end)

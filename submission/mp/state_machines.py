@@ -1,8 +1,18 @@
 from mp import states
 
 
+
 class MPStateMachine(states.StateMachine):
+    """
+    MPStateMachine.
+    Class to assimilate different states into a state machine.
+    """
+
     def build(self):
+        """
+        build.
+        Builds the state machine.
+        """
         self.goto_init_pose = states.GoToInitPoseState(self.env)
         self.align_object = states.AlignObjectSequenceState(self.env)
         self.planned_grasp = states.PlannedGraspState(self.env)
