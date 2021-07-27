@@ -34,3 +34,5 @@
     - [X] create necessary video files for visualisation
 - [ ] Experiment with different coeff for `add_grasp` functionlity in
   `grasp_motion`
+- [ ] Sort out th code Cartesian Position control
+- [ ] Sort out the code Cartesian Impedence control
