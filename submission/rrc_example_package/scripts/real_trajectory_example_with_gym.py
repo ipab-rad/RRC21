@@ -74,7 +74,7 @@ def main():
 
     # policy = RandomPolicy(env.action_space)
     # policy = PointAtTrajectoryPolicy(env.action_space, goal)
-    state_machine = create_state_machine(3, 'cpc-tg', env, False, False)
+    state_machine = create_state_machine(3, 'cic-cg', env, False, False)
 
     observation = env.reset()
     state_machine.reset()
