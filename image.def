@@ -18,5 +18,4 @@ From: ./rrc2021_latest.sif
     python3 -m pip  install --no-cache-dir torch==1.4.0 torchvision==0.5.0
     python3 -m pip install git+https://github.com/cbschaff/dl.git@91d1085b1df6cd2184214b1bcfcc7b9ee909ef41
     python3 -m pip install pudb
-    export XDG_CONFIG_HOME=/home/aditya/Documents/projects/rrc_ws/rrc_example/src/rrc_example_package/
     apt-get update && apt-get install -y ffmpeg
