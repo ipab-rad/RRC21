@@ -98,6 +98,7 @@ class GoToInitPoseState(OpenLoopState):
 
     def get_action_generator(self, obs, info=None):
         for pos in [CONTRACTED_JOINT_CONF, INIT_JOINT_CONF]:
+            __import__('pudb').set_trace()
             yield self.get_action(position=pos, frameskip=self.steps // 2), info
 
 
@@ -159,6 +160,7 @@ class HeuristicGraspState(OpenLoopState):
             except RuntimeError:
                 pass
 
+        __import__('pudb').set_trace()
         if actions is None:
             raise RuntimeError("All heuristic grasps failed...")
         else:
@@ -191,6 +193,7 @@ class PlannedGraspState(OpenLoopState):
         )
         info['grasp'] = grasp
         info['path'] = path
+        __import__('pudb').set_trace()
         actions = grasping.get_grasp_approach_actions(self.env, obs, grasp)
         for pos in actions:
             yield self.get_action(position=pos, frameskip=1), info

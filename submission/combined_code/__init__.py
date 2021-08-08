@@ -9,6 +9,7 @@ from cic import parameters_new_grasp as cic_parameters_new_grasp
 from mp import states, base_policies
 from cpc import parameters as cpc_params
 from combined_code import mix_and_match as mm
+from alt_policies import move_finger as mf
 
 
 state_machines = {
@@ -38,6 +39,20 @@ state_machines = {
     'cpc-cg-l4': mm.CPCwithCG,
 }
 
+
+def create_machine(env):
+    """
+    Creates state machine that implements position control logic
+    @param env:  simulation environment
+    @type  :  SimCubeTrajectoryEnv
+
+    @return:  state machine instantiating position control policy
+    @rtype :  PositionControlStateMachine
+
+    @raise e:  Description
+    """
+    machine = mf.PositionControlStateMachine(env)
+    return machine
 
 def create_state_machine(difficulty, method, env, residual=False, bo=False):
     if residual:

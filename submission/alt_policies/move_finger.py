@@ -1,14 +1,16 @@
 """
 File: move_finger.py
-Author: yourname
-Email: yourname@email.com
-Github: https://github.com/yourname
-Description: This file tries to implement a state machine to move a single
-finger of the `trifinger` robot. Amongst other things it tries to stick to the
-API structure opf the overall state/statemachine architecture.
+Author: Aditya Kamireddypalli
+Email: a.kamireddypalli@sms.ed.ac.uk
+Github: https://github.com/kzernobog
+Description:
+    This file tries to implement a state machine to move a single
+    finger of the `trifinger` robot. Amongst other things it tries to stick to the
+    API structure opf the overall state/statemachine architecture.
 """
 
 from mp.action_sequences import ScriptedActions
+from mp import states
 from .states import State, StateMachine
 
 ############
@@ -68,6 +70,9 @@ class MoveFingerState(OpenLoopState):
         # approach actions are generated in `HeuristicGraspState` and use the
         # same functionality
 
+        # retrieve object position
+        object_pos = obs[""]
+
 
 ####################
 #  State Machines  #
@@ -75,5 +80,15 @@ class MoveFingerState(OpenLoopState):
 
 class PositionControlStateMachine(StateMachine):
     def build(self):
-        self.init_state = MoveFingerState()
-        return self.init_state
+        """
+        Builds the experimental state machine
+        """
+        self.goto_init_state = states.GoToInitPoseState(self.env)
+        self.wait = states.WaitState(self.env, 30)
+        self.failure = states.FailureState(self.env)
+
+        # define state trasitions
+        self.goto_init_state.connect(next_state=self.wait, failure_state=self.failure)
+        self.wait.connect(next_state=self.goto_init_state,
+                          failure_state=self.failure)
+        return self.goto_init_state
