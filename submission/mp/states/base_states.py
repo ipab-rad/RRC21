@@ -98,7 +98,6 @@ class GoToInitPoseState(OpenLoopState):
 
     def get_action_generator(self, obs, info=None):
         for pos in [CONTRACTED_JOINT_CONF, INIT_JOINT_CONF]:
-            __import__('pudb').set_trace()
             yield self.get_action(position=pos, frameskip=self.steps // 2), info
 
 

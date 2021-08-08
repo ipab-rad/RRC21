@@ -12,6 +12,11 @@ Description:
 from mp.action_sequences import ScriptedActions
 from mp import states
 from .states import State, StateMachine
+import numpy as np
+
+POS1 = np.array([0.0, 1.4, -2.4, 0.0, 1.4, -2.4, 0.0, 1.4, -2.4], dtype=np.float32)
+POS2 = np.array([0.0, 1.4, -2.2, 0.0, 1.4, -2.4, 0.0, 1.4, -2.4], dtype=np.float32)
+POS3 = np.array([0.0, 1.4, -1.9, 0.0, 1.4, -2.4, 0.0, 1.4, -2.4], dtype=np.float32)
 
 ############
 #  States  #
@@ -56,6 +61,9 @@ class OpenLoopState(State):
 class MoveFingerState(OpenLoopState):
 
     """Docstring for MoveFinger. """
+    def __init__(self, env, steps=300):
+        super().__init__(env)
+        self.steps = steps
 
     def get_action_generator(self, obs, info):
         """
@@ -71,7 +79,9 @@ class MoveFingerState(OpenLoopState):
         # same functionality
 
         # retrieve object position
-        object_pos = obs[""]
+        for pos in [POS1, POS2, POS3]:
+            yield self.get_action(position=pos, frameskip=self.steps // 2), info
+
 
 
 ####################
@@ -84,11 +94,13 @@ class PositionControlStateMachine(StateMachine):
         Builds the experimental state machine
         """
         self.goto_init_state = states.GoToInitPoseState(self.env)
+        self.move_finger = MoveFingerState(self.env)
         self.wait = states.WaitState(self.env, 30)
         self.failure = states.FailureState(self.env)
 
         # define state trasitions
-        self.goto_init_state.connect(next_state=self.wait, failure_state=self.failure)
-        self.wait.connect(next_state=self.goto_init_state,
+        self.goto_init_state.connect(next_state=self.move_finger, failure_state=self.failure)
+        self.move_finger.connect(next_state=self.wait, failure_state=self.failure)
+        self.wait.connect(next_state=self.move_finger,
                           failure_state=self.failure)
         return self.goto_init_state
