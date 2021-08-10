@@ -146,16 +146,46 @@ class WholeBodyPlanner:
              max_goal_threshold=0.8, use_ori=False, avoid_edge_faces=True,
              yawing_grasp=False, collision_tolerance=-COLLISION_TOLERANCE * 10,
              path_min_height=0.01, direct_path=False):
+        """plan.
+        Samples heuristic/random grasps, plans a trajectory for the set of
+        grasps sampled. If the planned trajectory is successful, returns grasp
+        and path of the grasp.
+
+        Args:
+            pos: current position of object
+            quat: current orientation of the object
+            goal_pos: goal position that the cube needs to reach
+            goal_quat: goal orientation that the cube needs to reach
+            heuristic_grasps: heuristic grasps if already sampled
+            retry_grasp:
+            use_rrt: bool, use rrt or not
+            use_incremental_rrt:
+            min_goal_threshold:
+            max_goal_threshold:
+            use_ori:
+            avoid_edge_faces:
+            yawing_grasp:
+            collision_tolerance:
+            path_min_height:
+            direct_path:
+        """
         resolutions = 0.03 * np.array([0.3, 0.3, 0.3, 1, 1, 1])  # roughly equiv to the lengths of one step.
 
+        # convert from quats to euler
         goal_ori = p.getEulerFromQuaternion(goal_quat)
+
+        # representation of pose
         target_pose = np.concatenate([goal_pos, goal_ori])
+
+        # sample grasps
         grasp_sampler = GraspSampler(self.env, pos, quat, slacky_collision=True, avoid_edge_faces=avoid_edge_faces, yawing_grasp=yawing_grasp)
         if heuristic_grasps is None:
             grasps = [g for g in grasp_sampler.get_heuristic_grasps()]
         else:
             grasps = heuristic_grasps
 
+
+        # plan the trajectory
         print("WHOLEBODY PLANNING")
         print(f"num heuristic grasps: {len(grasps)}")
 

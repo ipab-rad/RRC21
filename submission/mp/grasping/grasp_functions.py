@@ -32,6 +32,22 @@ def sample_partial_grasp(env, pos, quat):
 
 def get_planned_grasp(env, pos, quat, goal_pos, goal_quat, tight=False,
                       **kwargs):
+    """get_planned_grasp.
+
+    returns a candidate grasp and it's corresponding path to the goal pose.
+    This is done by sampling a grasp, planning a trajectory using the grasp and
+    executing the grasp to see if the trajectory is successful.
+
+    Args:
+        env: simulation/real environment
+        pos: current position of the object
+        quat: current orientation of the object
+        goal_pos: goal position of the cube after trajectory
+        goal_quat: goal orientation of the cube after trajectory
+        tight: yet to figure
+        kwargs: other args such as planning algo, difficulty of task
+        (deprecated for 2021)
+    """
     planner = WholeBodyPlanner(env)
     path = planner.plan(pos, quat, goal_pos, goal_quat, **kwargs)
     grasp = copy.deepcopy(path.grasp)

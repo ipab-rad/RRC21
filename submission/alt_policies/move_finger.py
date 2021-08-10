@@ -83,6 +83,32 @@ class MoveFingerState(OpenLoopState):
             yield self.get_action(position=pos, frameskip=self.steps // 2), info
 
 
+class MoveFingerToObjState(OpenLoopState):
+
+    """Docstring for MoveFingerToObjState. """
+    def __init__(self, env, steps=300):
+        super().__init__(env)
+        self.steps = steps
+
+    def get_action_generator(self, obs, info):
+        """
+        Generates actions for the `move_finger_obj` state within the context of
+        the state machine. This state is responsible for moving the finger to
+        the object
+
+        """
+        # Get a trajectory for one finger to the center of a face
+        # You can look at how the grasps are generated within
+        # `HeuristicGraspState` and emulate the trajectory generation
+        # Execute the trajectory until it touches the face. You can copy how
+        # approach actions are generated in `HeuristicGraspState` and use the
+        # same functionality
+
+        # retrieve object position
+        for pos in [POS1, POS2, POS3]:
+            yield self.get_action(position=pos, frameskip=self.steps // 2), info
+
+
 
 ####################
 #  State Machines  #
