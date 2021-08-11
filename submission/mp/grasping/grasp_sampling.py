@@ -53,6 +53,15 @@ def sample_side_face(n, half_size, object_ori, shrink_region=[0.6, 0.6, 0.6]):
 
 
 def get_side_face_centers(half_size, object_ori):
+    """get_side_face_centers.
+    Retrieves face centers of the sides of the cube that are perpedicular to
+    the ground
+
+    Args:
+        half_size: half size if the cube, as specified by a constant value
+        within the environment
+        object_ori: current object environment
+    """
     R_base_to_cube = Transform(np.zeros(3), object_ori).inverse()
     z_cube = R_base_to_cube(np.array([0, 0, 1]))
     axis = np.argmax(np.abs(z_cube))
@@ -65,6 +74,15 @@ def get_side_face_centers(half_size, object_ori):
 
 
 def get_three_sided_heuristic_grasps(half_size, object_ori):
+    """get_three_sided_heuristic_grasps.
+
+    Retrieves a set of 3S3F grasps.
+
+    Args:
+        half_size: half size of the cube. Defined by a constant within the
+        environment
+        object_ori: orientation of the object
+    """
     points = get_side_face_centers(half_size, object_ori)
     grasps = []
     for ind in range(4):
@@ -72,7 +90,43 @@ def get_three_sided_heuristic_grasps(half_size, object_ori):
     return grasps
 
 
+def get_one_sided_heurstic_grasp(half_size, object_ori):
+    """get_one_sided_heurstic_grasp.
+    Try to move one finger of the `Trifinger` robot to a face of the cube.
+
+    Args:
+        half_size: half size of the cube. Defined by a constant within the
+        envirobnment
+        object_ori: orientation of the object
+    """
+
+    side_centers = get_side_face_centers(half_size, object_ori)
+    ax1 = side_centers[1] - side_centers[0]
+    ax2 = side_centers[3] - side_centers[2]
+    g1 = np.array([
+        side_centers[0],
+    ])
+    g2 = np.array([
+        side_centers[1],
+    ])
+    g3 = np.array([
+        side_centers[2],
+    ])
+    g4 = np.array([
+        side_centers[3],
+    ])
+    return [g1, g2, g3, g4]
+
 def get_two_sided_heurictic_grasps(half_size, object_ori):
+    """get_two_sided_heurictic_grasps.
+    Retrieves a set of 2S3F grasps.
+
+    Args:
+        half_size: half size of the cube. Defined by a constant within the
+        environment
+        object_ori: orientation of the object
+    """
+    __import__('pudb').set_trace()
     side_centers = get_side_face_centers(half_size, object_ori)
     ax1 = side_centers[1] - side_centers[0]
     ax2 = side_centers[3] - side_centers[2]
@@ -100,6 +154,16 @@ def get_two_sided_heurictic_grasps(half_size, object_ori):
 
 
 def get_two_finger_heurictic_grasps(half_size, object_ori):
+    """get_two_finger_heurictic_grasps.
+
+    Retreives a set of 2S2F grasps.
+
+    Args:
+        half_size: half size of the cube. Defined as constant within the
+        environment.
+        object_ori: orientation of the cube
+    """
+    __import__('pudb').set_trace()
     side_centers = get_side_face_centers(half_size, object_ori)
     ax1 = side_centers[1] - side_centers[0]
     ax2 = side_centers[3] - side_centers[2]
@@ -130,11 +194,12 @@ def get_all_heuristic_grasps(half_size, object_ori):
     """get_all_heuristic_grasps.
 
     This provides you with a concatenated list of two sided and three sided
-    centred grasps. 
+    centred grasps.
 
     Args:
-        half_size:
-        object_ori:
+        half_size: half size of the cube, defined as a constant in the
+        environment
+        object_ori: orientation of the cube.
     """
     return (
         get_two_sided_heurictic_grasps(half_size, object_ori)
@@ -146,8 +211,45 @@ def get_all_heuristic_grasps(half_size, object_ori):
     #     get_three_sided_heuristic_grasps(half_size, object_ori)
     # )
 
+def get_onefinger_heuristic(half_size, object_ori):
+    """get_onefinger_heuristic.
 
-class GraspSampler(object):
+    Retreives position for one finger to move onto the cube
+
+    Args:
+        half_size : half size of the cube, as defined by a constant in the
+        environment
+        object_ori : orientation of the object
+
+    Returns: a list of positions on the cube for a finger to attach itself
+    to.
+
+    """
+    return (get_one_sided_heurstic_grasp(half_size, object_ori))
+
+
+
+class GraspSampler:
+    """GraspSampler.
+    Given the current position of the object, this class samples a set of
+    heuristic grasps around the object. This set of heuristic grasps are
+    according to the `get_all_heuristic_grasps(half_size, object_ori)`
+    template.
+
+    If no heuristic grasps are possible, then this class additionally provides
+    the funtionality of sampling random grasps.
+
+    Heuristic grasps:
+        3S3F - 3 sided 3 fingered grasps, where each finger is placed on
+        an individual face of the cube. The configuration is in such a way that
+        the fingers placed on 3 consecutive sides of the cube
+        2S3Fv - 2 sided 3 fingered grasps, where 2 fingers are placed on one
+        side and the 3rd finger is placed on the opposite side.
+
+    The `get_heuristic_grasps` returns a list of `Grasp` objects that can be
+    utilised to plan trajectories for each finger of the Trifinger robot.
+    """
+
     def __init__(self, env, pos, quat, slacky_collision=True,
                  halfsize=VIRTUAL_CUBOID_HALF_SIZE,
                  ignore_collision=False, avoid_edge_faces=True, yawing_grasp=False, allow_partial_sol=False):
@@ -189,6 +291,13 @@ class GraspSampler(object):
         return False, q
 
     def assign_positions_to_fingers(self, tips):
+        """assign_positions_to_fingers.
+        Assigns fingers from the Trifinger robot to each of the computed tip
+        positions on the cube.
+
+        Args:
+            tips: tip positions that on the cube
+        """
         cost_to_inds = {}
         for v in itertools.permutations([0, 1, 2]):
             sorted_tips = tips[v, :]
@@ -205,6 +314,16 @@ class GraspSampler(object):
         return opt_tips, opt_inds, inds_sorted_by_cost
 
     def get_feasible_grasps_from_tips(self, tips):
+        """get_feasible_grasps_from_tips.
+
+        Given a set of heuristic grasps and tip positions on the cube, estimate
+        and yield grasps that can be used to plan a trajectory.
+
+        The return value is an instance of the class `Grasp`.
+
+        Args:
+            tips: Estimated tip positions
+        """
         _, _, permutations_by_cost = self.assign_positions_to_fingers(tips)
         for perm in permutations_by_cost:
             ordered_tips = tips[perm, :]
@@ -239,12 +358,29 @@ class GraspSampler(object):
         raise RuntimeError('No feasible grasp is found.')
 
     def get_heuristic_grasps(self):
-        grasps = get_all_heuristic_grasps(
-            self.halfsize, self.object_ori,
-        )
+        """get_heuristic_grasps.
+
+        Retreives a set of heuristic grasp configurations, and returns a set of
+        `Grasp` object corresponding to the heuristic grasps
+        """
+        # grasps = get_all_heuristic_grasps(
+        #     self.halfsize, self.object_ori,
+        # )
+
+        try:
+            grasps = get_onefinger_heuristic(
+                self.halfsize, self.object_ori,
+            )
+        except Exception as err:
+            print(err)
+            __import__('pudb').set_trace()
+
         ret = []
         with keep_state(self.env):
             for points in grasps:
+
+                # transform the grasp points estimated on the cube to the
+                # Trifinger base coordinate system.
                 tips = self.T_cube_to_base(points)
                 # NOTE: we sacrifice a bit of speed by not using "yield", however,
                 # context manager doesn't work as we want if we use "yield".
@@ -252,6 +388,8 @@ class GraspSampler(object):
                 # (get_feasible_grasps_from_tips only iterates 6 grasps!).
                 # for grasp in self.get_feasible_grasps_from_tips(tips):
                 #     yield grasp
+
+                # retrieve feasible grasps
                 ret += [grasp for grasp in self.get_feasible_grasps_from_tips(tips)]
             return ret
 
