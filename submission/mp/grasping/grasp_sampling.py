@@ -313,6 +313,28 @@ class GraspSampler:
         # verbose output
         return opt_tips, opt_inds, inds_sorted_by_cost
 
+    def assign_position_to_finger(self, tips):
+        """assign_position_to_finger.
+        Assigns finger to a designated grasp tip on the cube
+
+        Args:
+            tips: point on the cube to be grasped
+        """
+        cost_to_inds = {}
+        for v in itertools.combinations([0, 1, 2], 1):
+            sorted_tips = tips[v, :]
+            cost = np.linalg.norm(sorted_tips - self._org_tips_init)
+            cost_to_inds[cost] = v
+
+        inds_sorted_by_cost = [
+            val for key, val in sorted(cost_to_inds.items(), key=lambda x: x[0])
+        ]
+        opt_inds = inds_sorted_by_cost[0]
+        opt_tips = tips[opt_inds, :]
+
+        # verbose output
+        return opt_tips, opt_inds, inds_sorted_by_cost
+
     def get_feasible_grasps_from_tips(self, tips):
         """get_feasible_grasps_from_tips.
 
@@ -367,13 +389,10 @@ class GraspSampler:
         #     self.halfsize, self.object_ori,
         # )
 
-        try:
-            grasps = get_onefinger_heuristic(
-                self.halfsize, self.object_ori,
-            )
-        except Exception as err:
-            print(err)
-            __import__('pudb').set_trace()
+        __import__('pudb').set_trace()
+        grasps = get_onefinger_heuristic(
+            self.halfsize, self.object_ori,
+        )
 
         ret = []
         with keep_state(self.env):

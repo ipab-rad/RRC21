@@ -52,6 +52,7 @@ class CenteringPrimitiveState(State):
 
     def __call__(self, obs, info=None):
         info = dict() if info is None else info
+        __import__('pudb').set_trace()
         return self.heuristic_grasp(obs, info)
 
 

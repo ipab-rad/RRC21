@@ -142,10 +142,14 @@ class HeuristicGraspState(OpenLoopState):
         """
 
         # retrieve all possible grasps
-        grasps = grasping.get_all_heuristic_grasps(
-            self.env, obs['object_position'], obs['object_orientation'],
-            avoid_edge_faces=False
-        )
+        try:
+            grasps = grasping.get_all_heuristic_grasps(
+                self.env, obs['object_position'], obs['object_orientation'],
+                avoid_edge_faces=False
+            )
+        except Exception as err:
+            print("Error: ", err)
+            __import__('pudb').set_trace()
         actions = None
 
         # iterate through all grasps and generate actions for the first
