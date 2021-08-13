@@ -296,9 +296,16 @@ class GraspSampler:
         positions on the cube.
 
         Args:
-            tips: tip positions that on the cube
+            tips: positions on the cube where the tips of the `Trifinger` robot
+            could go.
         """
+
+        # a dict to maintain the cost associated with different permutatuins of
+        # `Trifinger` robot finger tips with computed finger tips.
         cost_to_inds = {}
+
+        # iterate through different permutations of `Trifinger` robot tips and
+        # maintain their respective costs
         for v in itertools.permutations([0, 1, 2]):
             sorted_tips = tips[v, :]
             cost = np.linalg.norm(sorted_tips - self._org_tips_init)
