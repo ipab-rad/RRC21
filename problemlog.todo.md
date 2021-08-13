@@ -36,3 +36,11 @@
   `grasp_motion`
 - [ ] Sort out th code Cartesian Position control
 - [ ] Sort out the code Cartesian Impedence control
+- [ ] Move one finger to a tip position on the cube
+  - [ ] select which of the three estimated tip position you want to move
+    towards.
+    - [ ] house this in `MoveFingerToObjState` 
+  - [ ] select which finger needs to go there
+  - [ ] Create a Grasp object of the finger tips
+  - [ ] generate approach actions
+  - [ ] Execute actions

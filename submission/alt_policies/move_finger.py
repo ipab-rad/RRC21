@@ -13,6 +13,8 @@ from mp.action_sequences import ScriptedActions
 from mp import states
 from .states import State, StateMachine
 import numpy as np
+from .fingers import get_finger_configuration
+from mp import grasping
 
 POS1 = np.array([0.0, 1.4, -2.4, 0.0, 1.4, -2.4, 0.0, 1.4, -2.4], dtype=np.float32)
 POS2 = np.array([0.0, 1.4, -2.2, 0.0, 1.4, -2.4, 0.0, 1.4, -2.4], dtype=np.float32)
@@ -105,8 +107,23 @@ class MoveFingerToObjState(OpenLoopState):
         # same functionality
 
         # retrieve object position
-        for pos in [POS1, POS2, POS3]:
-            yield self.get_action(position=pos, frameskip=self.steps // 2), info
+        # for pos in [POS1, POS2, POS3]:
+        #     yield self.get_action(position=pos, frameskip=self.steps // 2), info
+
+        # TODO: need to ensure that fing_mov is a `Grasp` object
+        __import__('pudb').set_trace()
+        fing_mov = get_finger_configuration(self.env,
+                                           obs['object_position'],
+                                           obs['object_orientation'])
+
+        # sticking with the original solution's `Trifinger` API
+        info['grasp'] = fing_mov
+        actions = grasping.get_grasp_approach_actions(self.env, obs, fing_mov[0])
+        for pos in actions:
+            yield self.get_action(position=pos, frameskip=1), info
+
+
+
 
 
 
@@ -120,13 +137,14 @@ class PositionControlStateMachine(StateMachine):
         Builds the experimental state machine
         """
         self.goto_init_state = states.GoToInitPoseState(self.env)
-        self.move_finger = MoveFingerState(self.env)
+        # self.move_finger = MoveFingerState(self.env)
+        self.move_finger_obj = MoveFingerToObjState(self.env)
         self.wait = states.WaitState(self.env, 30)
         self.failure = states.FailureState(self.env)
 
         # define state trasitions
-        self.goto_init_state.connect(next_state=self.move_finger, failure_state=self.failure)
-        self.move_finger.connect(next_state=self.wait, failure_state=self.failure)
-        self.wait.connect(next_state=self.move_finger,
+        self.goto_init_state.connect(next_state=self.move_finger_obj, failure_state=self.failure)
+        self.move_finger_obj.connect(next_state=self.wait, failure_state=self.failure)
+        self.wait.connect(next_state=self.goto_init_state,
                           failure_state=self.failure)
         return self.goto_init_state
