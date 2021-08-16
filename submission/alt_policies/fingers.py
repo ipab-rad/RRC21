@@ -7,6 +7,16 @@ import itertools
 import numpy as np
 
 def get_finger_configuration(env, pos, quat):
+    """get_finger_configuration.
+    Retrieves finger to touch the closest centre of the cube. It returns a
+    list of `Grasps` that carry out this action,
+
+    Args:
+        env: Simulation/Real environment
+        pos: position of the cube
+        quat: orientation of the cube
+    """
+
     primitive = FingerPrimitives(env, pos, quat)
     fing_mov = primitive.get_heuristic_grasps()
     return fing_mov

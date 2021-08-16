@@ -4,7 +4,7 @@ from mp.const import INIT_JOINT_CONF
 import numpy as np
 
 
-def get_grasp_approach_actions(env, obs, grasp):
+def get_grasp_approach_actions(env, obs, grasp, move_finger=False):
     """get_grasp_approach_actions.
     retrieves grasp approach actions. Given the grasp (cartesian points on the
     object where the tips need to reach), this funtion returns an action
@@ -29,7 +29,10 @@ def get_grasp_approach_actions(env, obs, grasp):
     # actual generation of actions to carry out grasp
     action_sequence.add_raise_tips()
     action_sequence.add_heuristic_pregrasp(pregrasp_tip_pos)
-    action_sequence.add_grasp(coef=0.6)
+    if not move_finger:
+        action_sequence.add_grasp(coef=0.6)
+    else:
+        action_sequence.add_grasp(coef=1.0)
 
     act_seq = action_sequence.get_action_sequence(
         action_repeat=4 if env.simulation else 12 * 4,

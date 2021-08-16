@@ -35,6 +35,8 @@
 - [ ] Experiment with different coeff for `add_grasp` functionlity in
   `grasp_motion`
 - [ ] Sort out th code Cartesian Position control
+    - [ ] no action going through in `GoToInitState` - pass position into
+      action
 - [ ] Sort out the code Cartesian Impedence control
 - [X] Move one finger to a tip position on the cube
   - [X] select which of the three estimated tip position you want to move
@@ -44,3 +46,4 @@
   - [X] Create a Grasp object of the finger tips
   - [X] generate approach actions
   - [X] Execute actions
+  - [X] Execute touch not push

@@ -117,8 +117,10 @@ class MoveFingerToObjState(OpenLoopState):
                                            obs['object_orientation'])
 
         # sticking with the original solution's `Trifinger` API
-        info['grasp'] = fing_mov
-        actions = grasping.get_grasp_approach_actions(self.env, obs, fing_mov[0])
+        info['grasp'] = fing_mov[0]
+        actions = grasping.get_grasp_approach_actions(self.env, obs,
+                                                      fing_mov[0],
+                                                      move_finger=True)
         for pos in actions:
             yield self.get_action(position=pos, frameskip=1), info
 

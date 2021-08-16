@@ -160,6 +160,7 @@ class GoToInitState(SimpleState):
         self.t = 0
 
     def __call__(self, obs, info={}):
+        # __import__('pudb').set_trace()
         self.update_gain()
         current = self._get_tip_poses(obs)
         up_position = np.array([0.5, 1.2, -2.4] * 3)
@@ -167,7 +168,9 @@ class GoToInitState(SimpleState):
             self.env.pinocchio_utils.forward_kinematics(up_position)).flatten()
         err = desired - current
         torque = self.get_torque_action(obs, self.k_p * err)
-        action = self.get_action(torque=np.clip(
+        # action = self.get_action(torque=np.clip(
+        #     torque, self.action_space_limits.low, self.action_space_limits.high), frameskip=1)
+        action = self.get_action(position=desired, torque=np.clip(
             torque, self.action_space_limits.low, self.action_space_limits.high), frameskip=1)
         if np.linalg.norm(err) < 2 * EPS:
             info['force_offset'] = obs['tip_force']
@@ -212,6 +215,7 @@ class AlignState(SimpleState):
         self.start_time = None
 
     def __call__(self, obs, info={}):
+        __import__('pudb').set_trace()
         if self.start_time is None:
             self.start_time = time.time()
 
@@ -263,6 +267,7 @@ class LowerState(SimpleState):
         self.start_time = None
 
     def __call__(self, obs, info={}):
+        __import__('pudb').set_trace()
         if self.start_time is None:
             self.start_time = time.time()
 
@@ -353,6 +358,7 @@ class IntoState(SimpleState):
         return self.grasp_check_failed_count < 5
 
     def __call__(self, obs, info={}):
+        __import__('pudb').set_trace()
         if self.start_time is None:
             self.start_time = time.time()
 

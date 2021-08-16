@@ -480,7 +480,7 @@ class MoveToGoalState(State):
     """The main state for carrying the object to the goal.
 
     Uses the planned path together with force control to carry
-    the ojbect to goal.
+    the object to goal.
     This expects that the fingers are grasping the cube when this state is reached.
 
     Expect for info to have:
