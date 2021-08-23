@@ -523,8 +523,15 @@ class MoveToGoalState(State):
         assert "path" in info
 
         if self.pi is None:
+            # self.pi = base_policies.PlanningAndForceControlPolicy(
+            #     self.env, obs, base_policies.CancelGravityPolicy(self.env),
+            #     info['path'],
+            #     adjust_tip=True,
+            #     adjust_tip_ori=False,
+            #     action_repeat=self.BO_action_repeat
+            # )
             self.pi = base_policies.PlanningAndForceControlPolicy(
-                self.env, obs, base_policies.CancelGravityPolicy(self.env),
+                self.env, obs, base_policies.BasicForceControl(self.env),
                 info['path'],
                 adjust_tip=True,
                 adjust_tip_ori=False,

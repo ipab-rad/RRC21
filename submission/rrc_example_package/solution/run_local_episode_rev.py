@@ -35,7 +35,7 @@ def _init_env(goal_pose_dict, difficulty):
         'monitor': False,
         'visualization': True,
         'sim': True,
-        'episode_length': 2000,
+        'episode_length': 120000,
         'rank': 0
     }
 
