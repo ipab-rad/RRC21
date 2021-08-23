@@ -9,18 +9,31 @@ import sys
 
 from rrc_example_package import rearrange_dice_env
 from rrc_example_package.example import PointAtDieGoalPositionsPolicy
+import trifinger_simulation
 
 
 def main():
     # the goal is passed as JSON string
-    goal_json = sys.argv[1]
-    goal = json.loads(goal_json)
+    # goal_json = sys.argv[1]
+    # goal = json.loads(goal_json)
+
+    goal = trifinger_simulation.tasks.rearrange_dice.sample_goal()
 
     env = rearrange_dice_env.RealRobotRearrangeDiceEnv(
         goal,
         rearrange_dice_env.ActionType.POSITION,
         step_size=1,
     )
+    #################################################
+    #  uncomment the following when using real bot  #
+    #################################################
+    # env = rearrange_dice_env.RealRobotRearrangeDiceEnv(
+    #     goal,
+    #     rearrange_dice_env.ActionType.POSITION,
+    #     step_size=1,
+    #     sim=False,
+    #     vis=False
+    # )
 
     policy = PointAtDieGoalPositionsPolicy(env.action_space, goal)
 

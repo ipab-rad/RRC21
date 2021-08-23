@@ -8,6 +8,7 @@ import numpy as np
 
 import robot_fingers
 import trifinger_simulation.tasks.rearrange_dice as task
+import trifinger_simulation
 from trifinger_simulation import trifingerpro_limits
 from trifinger_simulation.camera import load_camera_parameters
 from trifinger_object_tracking.py_lightblue_segmenter import segment_image
@@ -43,6 +44,8 @@ class RealRobotRearrangeDiceEnv(gym.GoalEnv):
         goal: typing.Optional[task.Goal] = None,
         action_type: ActionType = ActionType.POSITION,
         step_size: int = 1,
+        sim=True,
+        vis=True,
     ):
         """Initialize.
 
@@ -57,6 +60,8 @@ class RealRobotRearrangeDiceEnv(gym.GoalEnv):
         # Basic initialization
         # ====================
 
+        self.sim = sim
+        self.vis = vis
         if goal is not None:
             task.validate_goal(goal)
         self.goal = goal
@@ -271,7 +276,13 @@ class RealRobotRearrangeDiceEnv(gym.GoalEnv):
         if self.platform is not None:
             raise RuntimeError("Once started, this environment cannot be reset.")
 
-        self.platform = robot_fingers.TriFingerPlatformFrontend()
+        if not self.sim:
+            self.platform = robot_fingers.TriFingerPlatformFrontend()
+        else:
+            self.platform = trifinger_simulation.TrifingerPlatform(
+                visualisation=self.vis,
+                object_type=trifinger_simulation.trifinger_platform.ObjectType.DICE
+            )
 
         # if no goal is given, sample one randomly
         if self.goal is None:
