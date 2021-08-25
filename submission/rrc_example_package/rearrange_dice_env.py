@@ -12,6 +12,7 @@ import trifinger_simulation
 from trifinger_simulation import trifingerpro_limits
 from trifinger_simulation.camera import load_camera_parameters
 from trifinger_object_tracking.py_lightblue_segmenter import segment_image
+import cv2
 
 
 CONFIG_DIR = pathlib.Path("/etc/trifingerpro")
@@ -184,6 +185,13 @@ class RealRobotRearrangeDiceEnv(gym.GoalEnv):
         segmentation_masks = [
             segment_image(c.image) for c in camera_observation.cameras
         ]
+
+        count = 0
+        for c in camera_observation.cameras:
+            count += 1
+            mask = segment_image(c.image)
+            segmentation_masks.append(mask)
+            cv2.imwrite("/output/{}_segmap_{}.png".format(count, c.timestamp))
 
         observation = {
             "robot_observation": {
