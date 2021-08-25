@@ -8,4 +8,4 @@
 # ros2 run rrc21 real_trajectory_example_with_gym "$@"
 
 # Example for Stage 2
-ros2 run rrc_example_package dice_example_with_gym "$@"
+ros2 run rrc21 dice_example_with_gym "$@"
