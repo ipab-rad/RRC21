@@ -60,8 +60,6 @@ class RealRobotRearrangeDiceEnv(gym.GoalEnv):
         # Basic initialization
         # ====================
 
-        self.sim = sim
-        self.vis = vis
         if goal is not None:
             task.validate_goal(goal)
         self.goal = goal
@@ -276,13 +274,7 @@ class RealRobotRearrangeDiceEnv(gym.GoalEnv):
         if self.platform is not None:
             raise RuntimeError("Once started, this environment cannot be reset.")
 
-        if not self.sim:
-            self.platform = robot_fingers.TriFingerPlatformFrontend()
-        else:
-            self.platform = trifinger_simulation.TrifingerPlatform(
-                visualisation=self.vis,
-                object_type=trifinger_simulation.trifinger_platform.ObjectType.DICE
-            )
+        self.platform = robot_fingers.TriFingerPlatformFrontend()
 
         # if no goal is given, sample one randomly
         if self.goal is None:
