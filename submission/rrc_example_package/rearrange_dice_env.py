@@ -182,10 +182,11 @@ class RealRobotRearrangeDiceEnv(gym.GoalEnv):
         robot_observation = self.platform.get_robot_observation(t)
         camera_observation = self.platform.get_camera_observation(t)
 
-        segmentation_masks = [
-            segment_image(c.image) for c in camera_observation.cameras
-        ]
+        # segmentation_masks = [
+        #     segment_image(c.image) for c in camera_observation.cameras
+        # ]
 
+        segmentation_masks = []
         count = 0
         for c in camera_observation.cameras:
             count += 1
