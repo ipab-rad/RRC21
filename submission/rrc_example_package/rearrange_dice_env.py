@@ -191,7 +191,8 @@ class RealRobotRearrangeDiceEnv(gym.GoalEnv):
             count += 1
             mask = segment_image(c.image)
             segmentation_masks.append(mask)
-            cv2.imwrite("/output/{}_segmap_{}.png".format(count, c.timestamp))
+            cv2.imwrite("/output/{}_segmap_{}.png".format(count, c.timestamp),
+                       mask)
 
         observation = {
             "robot_observation": {
