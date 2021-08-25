@@ -193,7 +193,7 @@ class RealRobotRearrangeDiceEnv(gym.GoalEnv):
             mask = segment_image(c.image)
             segmentation_masks.append(mask)
             cv2.imwrite("/output/{}_segmap_{}.png".format(count, c.timestamp),
-                       mask)
+                       np.ndarray.astype(mask*255, np.uint8))
 
         observation = {
             "robot_observation": {
