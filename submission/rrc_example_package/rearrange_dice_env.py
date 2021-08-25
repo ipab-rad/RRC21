@@ -192,6 +192,8 @@ class RealRobotRearrangeDiceEnv(gym.GoalEnv):
             count += 1
             mask = segment_image(c.image)
             segmentation_masks.append(mask)
+            mask = np.asarray(mask)
+            print('unique values: {}'.format(np.unique(mask)))
             cv2.imwrite("/output/{}_segmap_{}.jpeg".format(count, c.timestamp),
                        np.ndarray.astype(mask*255, np.uint8))
 
