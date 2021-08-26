@@ -12,6 +12,7 @@ import trifinger_simulation
 from trifinger_simulation import trifingerpro_limits
 from trifinger_simulation.camera import load_camera_parameters
 from trifinger_object_tracking.py_lightblue_segmenter import segment_image
+from trifinger_camera.utils import convert_image
 import cv2
 
 
@@ -191,7 +192,7 @@ class RealRobotRearrangeDiceEnv(gym.GoalEnv):
         for c in camera_observation.cameras:
             count += 1
             print('image type: {}'.format(type(c.image)))
-            mask = segment_image(c.image)
+            mask = segment_image(convert_image(c.image), format="bgr")
             segmentation_masks.append(mask)
             mask = np.asarray(mask)
             print('unique values: {}'.format(np.unique(mask)))
