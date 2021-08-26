@@ -47,3 +47,9 @@
   - [X] generate approach actions
   - [X] Execute actions
   - [X] Execute touch not push
+- [ ] Construct pose for dice 2021-08-26 15:00
+  - [X] extract segmentation masks 2021-08-26 15:01
+  - [ ] extract dice in each camera
+    - [ ] connected components on the segmentation mask
+    - [ ] separate dice that are shown as one component
+  - [ ] associate dice in each camera

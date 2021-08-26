@@ -62,6 +62,7 @@ then
     do
         curl --user ${username}:${password} -o "${job_dir}/${file}" ${base_url}/${job_id}/${file}
     done
+    wget --user ${username} --password ${password} -np -P ${job_dir}/user/ -r -R "index.html*" -nH --cut-dirs=5 ${base_url}/${job_id}/user/
 else
     echo "No data for ${job_id} found."
     exit 1
