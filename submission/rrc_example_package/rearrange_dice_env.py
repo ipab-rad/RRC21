@@ -190,6 +190,7 @@ class RealRobotRearrangeDiceEnv(gym.GoalEnv):
         count = 0
         for c in camera_observation.cameras:
             count += 1
+            print('image type: {}'.format(type(c.image)))
             mask = segment_image(c.image)
             segmentation_masks.append(mask)
             mask = np.asarray(mask)
