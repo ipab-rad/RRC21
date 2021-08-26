@@ -197,7 +197,7 @@ class RealRobotRearrangeDiceEnv(gym.GoalEnv):
             mask = np.asarray(mask)
             print('unique values: {}'.format(np.unique(mask)))
             cv2.imwrite("/output/{}_segmap_{}.jpeg".format(count, c.timestamp),
-                       np.ndarray.astype(mask*255, np.uint8))
+                       mask)
 
         observation = {
             "robot_observation": {
