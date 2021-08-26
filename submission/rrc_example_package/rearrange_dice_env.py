@@ -12,7 +12,7 @@ import trifinger_simulation
 from trifinger_simulation import trifingerpro_limits
 from trifinger_simulation.camera import load_camera_parameters
 from trifinger_object_tracking.py_lightblue_segmenter import segment_image
-from trifinger_camera.utils import convert_image
+from trifinger_cameras.utils import convert_image
 import cv2
 
 
