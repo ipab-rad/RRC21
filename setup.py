@@ -40,6 +40,7 @@ setuptools.setup(
             "demo_gym = rrc_example_package.solution.demo_gym:main",
             "run_local_episode = rrc_example_package.solution.run_local_episode_rev:main",
             "run_move_fingers = alt_scripts.run_move_finger:main",
+            "sim_dice_example_with_gym = rrc_example_package.scripts.sim_dice_example_with_gym:main",
         ],
     },
     package_data={
