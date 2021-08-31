@@ -150,3 +150,22 @@ class PositionControlStateMachine(StateMachine):
         self.wait.connect(next_state=self.goto_init_state,
                           failure_state=self.failure)
         return self.goto_init_state
+
+
+class DicePoseEstimationStateMachine(StateMachine):
+    def build(self):
+        """
+        builds state machine to move fingers to intialstate. This is mainly to
+        experiment with better dice pose estimation.
+        """
+
+        self.goto_init_state = states.GoToInitPoseState(self.env)
+        self.wait = states.WaitState(self.env, 30)
+        self.failure = states.FailureState(self.env)
+
+        # connect these state up
+        self.goto_init_state.connect(next_state=self.wait,
+                                     failure_state=self.failure)
+        self.wait.connect(next_state=self.goto_init_state,
+                          failure_state=self.failure)
+        return self.goto_init_state

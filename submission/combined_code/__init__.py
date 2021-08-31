@@ -51,7 +51,9 @@ def create_machine(env):
 
     @raise e:  Description
     """
-    machine = mf.PositionControlStateMachine(env)
+    # machine = mf.PositionControlStateMachine(env)
+    # for debugging purposes
+    machine = mf.DicePoseEstimationStateMachine(env)
     return machine
 
 def create_state_machine(difficulty, method, env, residual=False, bo=False):

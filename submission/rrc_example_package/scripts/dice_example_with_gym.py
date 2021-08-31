@@ -9,6 +9,7 @@ import sys
 
 from rrc_example_package import rearrange_dice_env
 from rrc_example_package.example import PointAtDieGoalPositionsPolicy
+from combined_code import create_machine
 import trifinger_simulation
 
 
@@ -35,13 +36,15 @@ def main():
     #     vis=False
     # )
 
-    policy = PointAtDieGoalPositionsPolicy(env.action_space, goal)
+    # policy = PointAtDieGoalPositionsPolicy(env.action_space, goal)
+
+    machine = create_machine(env)
 
     observation = env.reset()
     t = 0
     is_done = False
     while not is_done:
-        action = policy.predict(observation, t)
+        action = machine(observation)
         observation, reward, is_done, info = env.step(action)
         t = info["time_index"]
 

@@ -49,7 +49,15 @@
   - [X] Execute touch not push
 - [ ] Construct pose for dice 2021-08-26 15:00
   - [X] extract segmentation masks 2021-08-26 15:01
+  - [X] visualise segmentation mask overlay over the image
+    - [X] include segmentation mask as an alpha channel for the image - does not display it
+    - [X] OpenCV does not imshow alpha channel, copied a wrapper from stackoverflow
+  - [ ] retrieve numbers on dice
+    - [ ] retrieve segmentation blobs
+    - [ ] extract grayscale intensity values from the blobs
+    - [ ] Threshold to demarcate numbers.
+    - [ ] Extract number points
   - [ ] extract dice in each camera
-    - [ ] connected components on the segmentation mask
-    - [ ] separate dice that are shown as one component
+    - [X] connected components on the segmentation mask
+    - [ ] separate dice that are shown as one component - idea is just get dice with black background
   - [ ] associate dice in each camera
