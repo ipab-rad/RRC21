@@ -148,6 +148,9 @@ def visualise_blobs():
         # convert original image to grayscale
         gray60 = cv2.cvtColor(image60, cv2.COLOR_BGR2GRAY)
 
+        # copy of the original image
+        image60_cp = np.copy(image60)
+
         # get the negative of the image
         gray60_neg = 255-gray60
 
@@ -157,17 +160,43 @@ def visualise_blobs():
         # make non dice pixels 0
         gray60_neg[x60, y60] = 0
 
-        edge = cv2.Canny(gray60_neg, 100, 200)
+        edge = cv2.Canny(gray60_neg, 150, 200)
+
+        edges_cp = np.copy(edge)
+
+        # find the probabilistic hough line transform
+        lines = cv2.HoughLinesP(edges_cp, 1, np.pi/180, 5)
+
+        if lines is not None:
+            for i in range(0, len(lines)):
+                l = lines[i][0]
+                cv2.line(image60_cp, (l[0], l[1]), (l[2], l[3]), (0, 0, 255), 2,
+                         cv2.LINE_AA)
+
+        # find contours
+        # contours, hierarchy = cv2.findContours(edge, cv2.RETR_TREE,
+        #                                        cv2.CHAIN_APPROX_SIMPLE)
+        ######################################################################
+        #                     uncomment for contour code                     #
+        ######################################################################
+        # contours, hierarchy = cv2.findContours(gray60_neg, cv2.RETR_TREE,
+        #                                        cv2.CHAIN_APPROX_SIMPLE)
+
+        # cv2.drawContours(image60, contours, -1, (0, 255, 0), 3)
+
+        ######################################################################
+        #                        uncomment till here                         #
+        ######################################################################
 
         h, w, c = image60.shape
 
         ret, gray60_thresh = cv2.threshold(gray60_neg, 100, 255, cv2.THRESH_BINARY)
-        gray60_adapThresh = cv2.adaptiveThreshold(gray60_neg, 255,
-                                                  cv2.ADAPTIVE_THRESH_MEAN_C
-                                                  , cv2.THRESH_BINARY, 5, 4)
-        gray60_adapGaussThresh = cv2.adaptiveThreshold(gray60_neg, 255,
-                                                       cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                                       cv2.THRESH_BINARY, 5, 4)
+        # gray60_adapThresh = cv2.adaptiveThreshold(gray60_neg, 255,
+        #                                           cv2.ADAPTIVE_THRESH_MEAN_C
+        #                                           , cv2.THRESH_BINARY, 5, 4)
+        # gray60_adapGaussThresh = cv2.adaptiveThreshold(gray60_neg, 255,
+        #                                                cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        #                                                cv2.THRESH_BINARY, 5, 4)
 
         # keypoints = detector.detect(mask60)
         # mask60_key = cv2.drawKeypoints(mask60, keypoints, np.array([]),
@@ -175,10 +204,12 @@ def visualise_blobs():
         #                                cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 
         cv2.imshow("camera60", gray60_thresh)
-        cv2.imshow("adaptive", gray60_adapThresh)
-        cv2.imshow("adaptive_gauss", gray60_adapGaussThresh)
-        cv2.imshow("dice", gray60_neg)
+        # cv2.imshow("adaptive", gray60_adapThresh)
+        # cv2.imshow("adaptive_gauss", gray60_adapGaussThresh)
+        cv2.imshow("dice", image60)
         cv2.imshow("edges", edge)
+        cv2.imshow("hough lines", image60_cp)
+        # cv2.imshow("contoured image", contoured_image)
         if cv2.waitKey(33) == ord('q'):
             sys.exit()
 
