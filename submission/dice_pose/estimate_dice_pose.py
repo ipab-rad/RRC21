@@ -1,8 +1,11 @@
 # some general imports
 import numpy as np
+from numpy.polynomial import polynomial as P
 import cv2
 import pathlib
 import sys
+from queue import Queue
+import itertools
 
 # trifinger imports
 import trifinger_cameras.py_tricamera_types as tricamera
@@ -66,6 +69,7 @@ def visualise_segments():
     camera_data = "/home/aditya/real_output/45608/camera_data.dat"
     log_reader = tricamera.LogReader(camera_data)
     orb = cv2.ORB_create()
+
     for observation in log_reader.data:
 
         # read images from raw data
@@ -124,11 +128,55 @@ def visualise_segments():
             sys.exit()
     return
 
+def merge_lines(lines):
+    clusters =  []
+    idx = []
+    total_lines = len(lines)
+    distance_threshold = 7
+    #if total_lines < 30:
+    #    distance_threshold = 20
+    #elif total_lines <75:
+    #    distance_threshold = 15
+    #elif total_lines<120:
+    #    distance_threshold = 10
+    #else:
+    #    distance_threshold = 7
+    for i,line in enumerate(lines):
+        x1,y1,x2,y2 = line
+        if [x1,y1,x2,y2] in idx:
+            continue
+        parameters = P.polyfit((x1, x2),(y1, y2), 1)
+        slope = parameters[0]#(y2-y1)/(x2-x1+0.001)
+        intercept = parameters[1]#((y2+y1) - slope *(x2+x1))/2
+        a = -slope
+        b = 1
+        c = -intercept
+        d = np.sqrt(a**2+b**2)
+    cluster = [line]
+    for d_line in lines[i+1:]:
+        x,y,xo,yo= d_line
+        mid_x = (x+xo)/2
+        mid_y = (y+yo)/2
+        distance = np.abs(a*mid_x+b*mid_y+c)/d
+        if distance < distance_threshold:
+            cluster.append(d_line)
+            idx.append(d_line.tolist())
+    clusters.append(np.array(cluster))
+    merged_lines = [np.mean(cluster, axis=0) for cluster in clusters]
+    # print(clusters)
+    # print(merged_lines)
+    return merged_lines
+
 def visualise_blobs():
     data_dir = "/home/aditya/real_output/45608/"
     camera_data = "/home/aditya/real_output/45608/camera_data.dat"
     log_reader = tricamera.LogReader(camera_data)
     detector = cv2.SimpleBlobDetector()
+
+    # initialise queue to store points from n consecutive frames
+    n = 5
+    line_q = Queue(maxsize=n)
+
     for observation in log_reader.data:
 
         # read images from raw data
@@ -167,11 +215,25 @@ def visualise_blobs():
         # find the probabilistic hough line transform
         lines = cv2.HoughLinesP(edges_cp, 1, np.pi/180, 5)
 
-        if lines is not None:
-            for i in range(0, len(lines)):
-                l = lines[i][0]
-                cv2.line(image60_cp, (l[0], l[1]), (l[2], l[3]), (0, 0, 255), 2,
+        if not line_q.full():
+            line_q.put(lines)
+        else:
+            line_q.get()
+            line_q.put(lines)
+
+        # merge the lines above
+        # lines = np.squeeze(lines, axis=1)
+        # m_lines = merge_lines(lines)
+
+        cum_lines = list(itertools.chain(*list(line_q.queue)))
+
+        if cum_lines is not None:
+            for i in range(0, len(cum_lines)):
+                l = cum_lines[i][0]
+                cv2.line(image60_cp, (l[0], l[1]), (l[2], l[3]), (0, 0, 255), 1,
                          cv2.LINE_AA)
+                # x1, y1, x2, y2 = m_lines[i].astype(int)
+                # cv2.line(image60_cp, (x1, y1), (x2, y2), (0, 0, 255), 1)
 
         # find contours
         # contours, hierarchy = cv2.findContours(edge, cv2.RETR_TREE,
