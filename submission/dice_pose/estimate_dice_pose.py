@@ -174,8 +174,10 @@ def visualise_blobs():
     detector = cv2.SimpleBlobDetector()
 
     # initialise queue to store points from n consecutive frames
-    n = 5
-    line_q = Queue(maxsize=n)
+    n_line = 10
+    n_con = 1
+    line_q = Queue(maxsize=n_line)
+    contour_q = Queue(maxsize=n_con)
 
     for observation in log_reader.data:
 
@@ -199,6 +201,12 @@ def visualise_blobs():
         # copy of the original image
         image60_cp = np.copy(image60)
 
+        # make a copy for overlaying contours
+        image_cor = np.copy(image60)
+
+        # make a copy for overlaying approximated polygons
+        image_poly = np.copy(image60)
+
         # get the negative of the image
         gray60_neg = 255-gray60
 
@@ -208,12 +216,71 @@ def visualise_blobs():
         # make non dice pixels 0
         gray60_neg[x60, y60] = 0
 
-        edge = cv2.Canny(gray60_neg, 150, 200)
+        # image_cor[x60, y60, :] = 0
+
+        # detect edges
+        edge = cv2.Canny(gray60_neg, 200, 250)
+
+        # if not edge_q.full():
+        #     edge_q.put(edge)
+        # else:
+        #     edge_q.get()
+        #     edge_q.put(edge)
+
+        # cum_edges = list(itertools.chain(*list(edge_q.queue)))
+
+
+        # edge = cv2.convertScaleAbs
+        # kernel = np.ones((1,1), np.uint8)
+        # edge = cv2.dilate(edge, kernel, iterations=1)
+
+        ######################################################################
+        #               Uncomment to try out corner detection                #
+        ######################################################################
+        # detect corners
+        # corners = cv2.preCornerDetect(gray60_neg, 5)
+        # corners = cv2.preCornerDetect(edge, 5)
+        # harr_corners = cv2.cornerHarris(edge, 5, 5, 0.1)
+
+        ######################################################################
+        #              uncomment till here for corner detection              #
+        ######################################################################
 
         edges_cp = np.copy(edge)
 
+        # contouring code
+        contours, h = cv2.findContours(np.asarray(edge), cv2.RETR_TREE,
+                                       cv2.CHAIN_APPROX_NONE)
+        if not contour_q.full():
+            contour_q.put(contours)
+        else:
+            contour_q.get()
+            contour_q.put(contours)
+
+        cum_contours = list(itertools.chain(*list(contour_q.queue)))
+        cv2.drawContours(image_cor, cum_contours, -1, (0, 255, 0))
+
+        ######################################################################
+        #                        Approximate Polygons                        #
+        ######################################################################
+
+        # approximate polygons for each contour
+        polygons = []
+        for cnt in cum_contours:
+            poly = cv2.approxPolyDP(cnt, 3, True)
+            polygons.append(poly)
+
+        cv2.drawContours(image_poly, polygons, -1, (255, 255, 0))
+
+        ######################################################################
+        #                       Hough line Experiments                       #
+        ######################################################################
         # find the probabilistic hough line transform
         lines = cv2.HoughLinesP(edges_cp, 1, np.pi/180, 5)
+
+        # skip canny
+        # lines = cv2.HoughLinesP(gray60_neg, 1, np.pi/180, 50)
+
 
         if not line_q.full():
             line_q.put(lines)
@@ -271,6 +338,10 @@ def visualise_blobs():
         cv2.imshow("dice", image60)
         cv2.imshow("edges", edge)
         cv2.imshow("hough lines", image60_cp)
+        cv2.imshow("contours", image_cor)
+        cv2.imshow("approx polygons", image_poly)
+        # cv2.imshow("corners", corners)
+        # cv2.imshow("harris corners", harr_corners)
         # cv2.imshow("contoured image", contoured_image)
         if cv2.waitKey(33) == ord('q'):
             sys.exit()
