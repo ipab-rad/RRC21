@@ -61,3 +61,9 @@
     - [X] connected components on the segmentation mask
     - [ ] separate dice that are shown as one component - idea is just get dice with black background
   - [ ] associate dice in each camera
+  - [ ] project imaginary dice on the image
+    - [ ] project cube onto image
+    - [ ] use connected component blobs to isolate each single dice
+    - [ ] project imaginary 3d dice on image
+    - [ ] calculate distance.
+    - [ ] optimize distance

@@ -6,15 +6,247 @@ import pathlib
 import sys
 from queue import Queue
 import itertools
+import typing
+from scipy.spatial.transform import Rotation
 
 # trifinger imports
 import trifinger_cameras.py_tricamera_types as tricamera
 from trifinger_cameras.utils import convert_image
 from trifinger_object_tracking.py_lightblue_segmenter import segment_image
+from trifinger_simulation.camera import (
+    load_camera_parameters,
+    CameraParameters,
+)
+
+###############################################################################
+#                     Some constants related to the arena                     #
+###############################################################################
+
+#: Radius of the arena in which target positions are sampled [m].
+ARENA_RADIUS = 0.19
+
+#: Number of dice in the arena
+NUM_DICE = 25
+
+#: Width of a die [m].
+DIE_WIDTH = 0.022
+
+#: Tolerance that is added to the target box width [m].
+TOLERANCE = 0.003
+
+#: Width of the target box in which the die has to be placed [m].
+TARGET_WIDTH = DIE_WIDTH + TOLERANCE
+
+#: Number of cells per row (one cell fits one die)
+N_CELLS_PER_ROW = int(2 * ARENA_RADIUS / DIE_WIDTH)
+
+# Helper types for type hints
+Cell = typing.Tuple[int, int]
+Position = typing.Sequence[float]
+Goal = typing.Sequence[Position]
 
 class DicePose:
     def __init__(self):
         pass
+
+def draw_line(image, points):
+    color = (255, 0, 0)
+    cv2.line(image, tuple(points[1][0][:2]), tuple(points[2][0][:2]), color, 16)
+    cv2.line(image, tuple(points[1][0][:2]), tuple(points[4][0][:2]), color, 16)
+
+    cv2.line(image, tuple(points[1][0][:2]), tuple(points[5][0][:2]), color, 16)
+    cv2.line(image, tuple(points[2][0][:2]), tuple(points[3][0][:2]), color, 16)
+    cv2.line(image, tuple(points[2][0][:2]), tuple(points[6][0][:2]), color, 16)
+    cv2.line(image, tuple(points[3][0][:2]), tuple(points[4][0][:2]), color, 16)
+    cv2.line(image, tuple(points[3][0][:2]), tuple(points[7][0][:2]), color, 16)
+
+    cv2.line(image, tuple(points[4][0][:2]), tuple(points[8][0][:2]), color, 16)
+    cv2.line(image, tuple(points[5][0][:2]), tuple(points[8][0][:2]), color, 16)
+
+    cv2.line(image, tuple(points[5][0][:2]), tuple(points[6][0][:2]), color, 16)
+    cv2.line(image, tuple(points[6][0][:2]), tuple(points[7][0][:2]), color, 16)
+    cv2.line(image, tuple(points[7][0][:2]), tuple(points[8][0][:2]), color, 16)
+    return image
+
+def _get_cell_corners_3d(
+    pos: Position,
+) -> np.ndarray:
+    """Get 3d positions of the corners of the cell at the given position."""
+    d = DIE_WIDTH / 2
+    nppos = np.asarray(pos)
+
+    # order of the corners is the same as in the cube model of the
+    # trifinger_object_tracking package
+    # people.tue.mpg.de/mpi-is-software/robotfingers/docs/trifinger_object_tracking/doc/cube_model.html
+    return np.array(
+        (
+            nppos + (d, -d, d),
+            nppos + (d, d, d),
+            nppos + (-d, d, d),
+            nppos + (-d, -d, d),
+            nppos + (d, -d, -d),
+            nppos + (d, d, -d),
+            nppos + (-d, d, -d),
+            nppos + (-d, -d, -d),
+        )
+    )
+
+class ProjectCube:
+    def __init__(self):
+        # Set camera parameters as used in simulation
+        # view 1
+        pose_60 = (
+            np.array(
+                (
+                    -0.6854993104934692,
+                    -0.5678349733352661,
+                    0.45569100975990295,
+                    0.0,
+                    0.7280372381210327,
+                    -0.5408401489257812,
+                    0.4212528169155121,
+                    0.0,
+                    0.007253906223922968,
+                    0.6205285787582397,
+                    0.7841504216194153,
+                    0.0,
+                    -0.01089033205062151,
+                    0.014668643474578857,
+                    -0.5458434820175171,
+                    1.0,
+                )
+            )
+            .reshape(4, 4)
+            .T
+        )
+        # view 2
+        pose_180 = (
+            np.array(
+                (
+                    0.999718189239502,
+                    0.02238837257027626,
+                    0.007906466722488403,
+                    0.0,
+                    -0.01519287470728159,
+                    0.8590874671936035,
+                    -0.5116034150123596,
+                    0.0,
+                    -0.01824631541967392,
+                    0.5113391280174255,
+                    0.8591853380203247,
+                    0.0,
+                    -0.000687665306031704,
+                    0.01029178500175476,
+                    -0.5366422533988953,
+                    1.0,
+                )
+            )
+            .reshape(4, 4)
+            .T
+        )
+        # view 3
+        pose_300 = (
+            np.array(
+                (
+                    -0.7053901553153992,
+                    0.5480064153671265,
+                    -0.44957074522972107,
+                    0.0,
+                    -0.7086654901504517,
+                    -0.5320233702659607,
+                    0.4634052813053131,
+                    0.0,
+                    0.014766914770007133,
+                    0.6454768180847168,
+                    0.7636371850967407,
+                    0.0,
+                    -0.0019663232378661633,
+                    0.0145435631275177,
+                    -0.5285998582839966,
+                    1.0,
+                )
+            )
+            .reshape(4, 4)
+            .T
+        )
+        # proj
+        pb_proj = (
+            np.array(
+                (
+                    2.0503036975860596,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    2.0503036975860596,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    -1.0000200271606445,
+                    -1.0,
+                    0.0,
+                    0.0,
+                    -0.002000020118430257,
+                    0.0,
+                )
+            )
+            .reshape(4, 4)
+            .T
+        )
+        width = 270
+        height = 270
+        x_scale = pb_proj[0, 0]
+        y_scale = pb_proj[1, 1]
+        c_x = width / 2
+        c_y = height / 2
+        f_x = x_scale * c_x
+        f_y = y_scale * c_y
+        camera_matrix = np.array([[f_x, 0, c_x], [0, f_y, c_y], [0, 0, 0]])
+
+        dist = (0, 0, 0, 0, 0)
+
+        self.camera_params = (
+            CameraParameters(
+                "camera60", width, height, camera_matrix, dist, pose_60
+            ),
+            CameraParameters(
+                "camera180", width, height, camera_matrix, dist, pose_180
+            ),
+            CameraParameters(
+                "camera300", width, height, camera_matrix, dist, pose_300
+            ),
+        )
+        pass
+
+    def projectPoints(self, pos: Position):
+        """
+        Project the given 3d position onto the camera's perspective
+        individually
+        """
+
+
+        # get camera position and orientation separately
+        tvec = self.camera_params[0].tf_world_to_camera[:3, 3] # translation vector
+        rmat = self.camera_params[0].tf_world_to_camera[:3, :3] # rotation matrix
+        rvec = Rotation.from_matrix(rmat).as_rotvec() # convert to rotation vector
+
+        # retrieve corners of the imaginary cube
+        corners = _get_cell_corners_3d(pos)
+
+        # project corner points into the image
+        projected_corners, _ = cv2.projectPoints(
+            corners,
+            rvec,
+            tvec,
+            self.camera_params[0].camera_matrix,
+            self.camera_params[0].distortion_coefficients,
+        )
+
+        return projected_corners
+
+
+
 
 
 def imshow(title,im):
@@ -179,6 +411,8 @@ def visualise_blobs():
     line_q = Queue(maxsize=n_line)
     contour_q = Queue(maxsize=n_con)
 
+    project_cube = ProjectCube()
+
     for observation in log_reader.data:
 
         # read images from raw data
@@ -206,6 +440,9 @@ def visualise_blobs():
 
         # make a copy for overlaying approximated polygons
         image_poly = np.copy(image60)
+
+        # make a copy of the image to project an imaginary cube onto the image
+        image_proj = np.copy(image60)
 
         # get the negative of the image
         gray60_neg = 255-gray60
@@ -331,8 +568,19 @@ def visualise_blobs():
         # mask60_key = cv2.drawKeypoints(mask60, keypoints, np.array([]),
         #                                (0,0,255),
         #                                cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+        ######################################################################
+        #               section to project 3d cube onto image                #
+        ######################################################################
+        pos = (0.0, 0.0, 0.05)
+        points = project_cube.projectPoints(pos)
+        for point in points:
+            __import__('pudb').set_trace()
+            cv2.circle(image_proj, (int(point[0][0]), int(point[0][1])), 0, (0,0,255), -1)
+
+        draw_line(image_proj, points)
 
         cv2.imshow("camera60", gray60_thresh)
+        cv2.imshow("proj cube", image_proj)
         # cv2.imshow("adaptive", gray60_adapThresh)
         # cv2.imshow("adaptive_gauss", gray60_adapGaussThresh)
         cv2.imshow("dice", image60)
