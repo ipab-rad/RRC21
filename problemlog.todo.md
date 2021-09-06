@@ -63,7 +63,9 @@
   - [ ] associate dice in each camera
   - [ ] project imaginary dice on the image
     - [X] project cube onto image
-    - [ ] use connected component blobs to isolate each single dice
-    - [ ] project imaginary 3d dice on image
-    - [ ] calculate distance.
+    - [X] use connected component blobs to isolate each single dice
+    - [X] project imaginary 3d dice on image
+    - [X] choose points on die and on blob
+    - [X] calculate hausdorff distance.
     - [ ] optimize distance
+      - [ ] code up the optmisation loop

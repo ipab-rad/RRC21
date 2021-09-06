@@ -307,6 +307,10 @@ def render_cube(project_cube, pos, image):
         cv2.circle(image, (int(point[0][0]), int(point[0][1])), 0, (0, 0, 255))
 
     draw_line(image, points)
+    return points
+
+def fit():
+    return NotImplementedError()
 
 
 
@@ -356,6 +360,28 @@ def imshow_components(labels):
     # set bg label to black
     labeled_img[label_hue==0] = 0
     return labeled_img
+
+def draw_points(image, points):
+    for i in range(0, np.shape(points)[0]):
+        cv2.circle(image, (int(points[i][0]), int(points[i][1])), 1, (0, 255, 0),
+                   -1)
+
+def draw_point(image, point):
+    cv2.circle(image, (int(point[0]), int(point[1])), 1, (0, 255, 0), -1)
+
+
+def pointPolygonCheck(polygon, point):
+    dis = cv2.pointPolygonTest(polygon, point, True)
+    return dis
+
+def whichPolygon(polygon_list, centroid):
+    for polygon in polygon_list:
+        # __import__('pudb').set_trace()
+        dis = pointPolygonCheck(polygon, centroid)
+        if dis>=0:
+            return polygon
+
+    return None
 
 def visualise_segments():
     data_dir = "/home/aditya/real_output/45608/"
@@ -461,8 +487,8 @@ def merge_lines(lines):
     return merged_lines
 
 def visualise_blobs():
-    data_dir = "/home/aditya/real_output/45608/"
-    camera_data = "/home/aditya/real_output/45608/camera_data.dat"
+    data_dir = "/home/aditya/real_output/45615/"
+    camera_data = "/home/aditya/real_output/45615/camera_data.dat"
     log_reader = tricamera.LogReader(camera_data)
     detector = cv2.SimpleBlobDetector()
 
@@ -841,21 +867,31 @@ def estimate_pose():
         polygons = []
         for cnt in cum_contours:
             poly = cv2.approxPolyDP(cnt, 3, True)
-            polygons.append(poly)
+            if poly.shape[0] >= 4:
+                polygons.append(poly)
 
 
         # now we have everything we need to construct pose of dice
         # let's visualise it
 
         image_temp = imshow_components(out60[1] == 17)
-        cv2.drawContours(image_temp, polygons, -1, (255, 255, 0))
+        target_poly = whichPolygon(polygons, out60[3][17])
+        if target_poly is None:
+            raise ValueError("There is no polygon corresponding to this\
+                             centroid")
+        cv2.drawContours(image_temp, target_poly, -1, (255, 255, 0))
+        # cv2.drawContours(image_temp, polygons, -1, (255, 255, 0))
         pos = (0.0, 0.0, 0.05)
-        render_cube(project_cube, pos, image_temp)
+        projected_points = render_cube(project_cube, pos, image_temp)
+        __import__('pudb').set_trace()
+        # draw_points(image_temp, out60[3][16])
+        draw_point(image_temp, out60[3][17])
         cv2.imshow("camera60 components", image_temp)
-        if cv2.waitKey(0) == ord('c'):
-            continue
-        elif cv2.waitKey(0) == ord('q'):
+        key = cv2.waitKey(0)
+        if key == ord('q'):
             sys.exit()
+        elif key == ord('c'):
+            continue
 
 
 
@@ -874,5 +910,5 @@ def hausdorf_distance(set1, set2):
 if __name__ == "__main__":
     # main()
     # visualise_segments()
-    visualise_blobs()
-    # estimate_pose()
+    # visualise_blobs()
+    estimate_pose()
