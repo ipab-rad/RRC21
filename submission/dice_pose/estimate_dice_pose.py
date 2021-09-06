@@ -8,6 +8,7 @@ from queue import Queue
 import itertools
 import typing
 from scipy.spatial.transform import Rotation
+from scipy.spatial.distance import directed_hausdorff
 
 # trifinger imports
 import trifinger_cameras.py_tricamera_types as tricamera
@@ -40,6 +41,19 @@ TARGET_WIDTH = DIE_WIDTH + TOLERANCE
 #: Number of cells per row (one cell fits one die)
 N_CELLS_PER_ROW = int(2 * ARENA_RADIUS / DIE_WIDTH)
 
+FACE_CORNERS = (
+    (0, 1, 2, 3),
+    (4, 5, 1, 0),
+    (5, 6, 2, 1),
+    (7, 6, 2, 3),
+    (4, 7, 3, 0),
+    (4, 5, 6, 7),
+)
+
+###############################################################################
+#                        End Constant decration block                         #
+###############################################################################
+
 # Helper types for type hints
 Cell = typing.Tuple[int, int]
 Position = typing.Sequence[float]
@@ -50,22 +64,49 @@ class DicePose:
         pass
 
 def draw_line(image, points):
-    color = (255, 0, 0)
-    cv2.line(image, tuple(points[1][0][:2]), tuple(points[2][0][:2]), color, 16)
-    cv2.line(image, tuple(points[1][0][:2]), tuple(points[4][0][:2]), color, 16)
+    color = (0, 0, 255)
+    # __import__('pudb').set_trace()
+    cv2.line(image, (int(points[0][0][0]), int(points[0][0][1])),
+             (int(points[1][0][0]), int(points[1][0][1])), color, 1)
+    cv2.line(image, (int(points[0][0][0]), int(points[0][0][1])),
+             (int(points[3][0][0]), int(points[3][0][1])), color, 1)
 
-    cv2.line(image, tuple(points[1][0][:2]), tuple(points[5][0][:2]), color, 16)
-    cv2.line(image, tuple(points[2][0][:2]), tuple(points[3][0][:2]), color, 16)
-    cv2.line(image, tuple(points[2][0][:2]), tuple(points[6][0][:2]), color, 16)
-    cv2.line(image, tuple(points[3][0][:2]), tuple(points[4][0][:2]), color, 16)
-    cv2.line(image, tuple(points[3][0][:2]), tuple(points[7][0][:2]), color, 16)
+    cv2.line(image, (int(points[0][0][0]), int(points[0][0][1])),
+             (int(points[4][0][0]), int(points[4][0][1])), color, 1)
+    cv2.line(image, (int(points[1][0][0]), int(points[1][0][1])),
+             (int(points[2][0][0]), int(points[2][0][1])), color, 1)
+    cv2.line(image, (int(points[1][0][0]), int(points[1][0][1])),
+             (int(points[5][0][0]), int(points[5][0][1])), color, 1)
+    cv2.line(image, (int(points[2][0][0]), int(points[2][0][1])),
+             (int(points[3][0][0]), int(points[3][0][1])), color, 1)
+    cv2.line(image, (int(points[2][0][0]), int(points[2][0][1])),
+             (int(points[6][0][0]), int(points[6][0][1])), color, 1)
 
-    cv2.line(image, tuple(points[4][0][:2]), tuple(points[8][0][:2]), color, 16)
-    cv2.line(image, tuple(points[5][0][:2]), tuple(points[8][0][:2]), color, 16)
+    cv2.line(image, (int(points[3][0][0]), int(points[3][0][1])),
+             (int(points[7][0][0]), int(points[7][0][1])), color, 1)
+    cv2.line(image, (int(points[4][0][0]), int(points[4][0][1])),
+             (int(points[7][0][0]), int(points[7][0][1])), color, 1)
 
-    cv2.line(image, tuple(points[5][0][:2]), tuple(points[6][0][:2]), color, 16)
-    cv2.line(image, tuple(points[6][0][:2]), tuple(points[7][0][:2]), color, 16)
-    cv2.line(image, tuple(points[7][0][:2]), tuple(points[8][0][:2]), color, 16)
+    cv2.line(image, (int(points[4][0][0]), int(points[4][0][1])),
+             (int(points[5][0][0]), int(points[5][0][1])), color, 1)
+    cv2.line(image, (int(points[5][0][0]), int(points[5][0][1])),
+             (int(points[6][0][0]), int(points[6][0][1])), color, 1)
+    cv2.line(image, (int(points[6][0][0]), int(points[6][0][1])),
+             (int(points[7][0][0]), int(points[7][0][1])), color, 1)
+
+    # cv2.line(image,(points[1][0][0]), (0, 0, 255), 6)
+    # cv2.line(image,(), (0, 0, 255), 6)
+    # cv2.line(image,(), (0, 0, 255), 6)
+    # cv2.line(image,(), (0, 0, 255), 6)
+    # cv2.line(image,(), (0, 0, 255), 6)
+    # cv2.line(image,(), (0, 0, 255), 6)
+    # cv2.line(image,(), (0, 0, 255), 6)
+    # cv2.line(image,(), (0, 0, 255), 6)
+    # cv2.line(image,(), (0, 0, 255), 6)
+    # cv2.line(image,(), (0, 0, 255), 6)
+    # cv2.line(image,(), (0, 0, 255), 6)
+    # cv2.line(image,(), (0, 0, 255), 6)
+
     return image
 
 def _get_cell_corners_3d(
@@ -246,6 +287,26 @@ class ProjectCube:
         return projected_corners
 
 
+###############################################################################
+#               Exploration funtions for dice pose construction               #
+###############################################################################
+
+def render_cube(project_cube, pos, image):
+    """render_cube.
+    Projects a 3d cube onto the image, and then renders it on the image
+    provided
+
+    Args:
+        project_cube: instance of ProjectCube class that is used to project the
+        cube
+        pos: position in the real world where the cube needs to be rendered
+        image: image to render cube on
+    """
+    points = project_cube.projectPoints(pos)
+    for point in points:
+        cv2.circle(image, (int(point[0][0]), int(point[0][1])), 0, (0, 0, 255))
+
+    draw_line(image, points)
 
 
 
@@ -425,6 +486,32 @@ def visualise_blobs():
         mask180 = segment_image(image180)
         mask300 = segment_image(image300)
 
+        ######################################################################
+        #                   compute connected componenets                    #
+        ######################################################################
+
+        # overlay mask over image
+        # this is not working, needs more attention
+        mod60 = cv2.cvtColor(image60, cv2.COLOR_BGR2BGRA)
+        mod60[:, :, 3] = mask60.astype(np.uint8)
+        mod180 = cv2.cvtColor(image180, cv2.COLOR_BGR2BGRA)
+        mod180[:, :, 3] = mask180.astype(np.uint8)
+        mod300 = cv2.cvtColor(image300, cv2.COLOR_BGR2BGRA)
+        mod300[:, :, 3] = mask300.astype(np.uint8)
+
+        # perform connected components on the binary mask image
+        out60 = cv2.connectedComponentsWithStats(mask60, 4, cv2.CV_32S)
+        # print("components in 60: {}".format(out60[0]))
+        out180 = cv2.connectedComponentsWithStats(mask180, 4, cv2.CV_32S)
+        # print("components in 180: {}".format(out180[0]))
+        out300 = cv2.connectedComponentsWithStats(mask300, 4, cv2.CV_32S)
+        # __import__('pudb').set_trace()
+        # print("components in 300: {}".format(out300[0]))
+        ######################################################################
+        #                  end of connected component blobs                  #
+        ######################################################################
+        
+
         # apply blurring on the mask to remove any rogue holes within the
         # segment
         mask60_blur = cv2.medianBlur(mask60, 5)
@@ -554,7 +641,7 @@ def visualise_blobs():
         #                        uncomment till here                         #
         ######################################################################
 
-        h, w, c = image60.shape
+        # h, w, c = image60.shape
 
         ret, gray60_thresh = cv2.threshold(gray60_neg, 100, 255, cv2.THRESH_BINARY)
         # gray60_adapThresh = cv2.adaptiveThreshold(gray60_neg, 255,
@@ -571,13 +658,14 @@ def visualise_blobs():
         ######################################################################
         #               section to project 3d cube onto image                #
         ######################################################################
-        pos = (0.0, 0.0, 0.05)
-        points = project_cube.projectPoints(pos)
-        for point in points:
-            __import__('pudb').set_trace()
-            cv2.circle(image_proj, (int(point[0][0]), int(point[0][1])), 0, (0,0,255), -1)
+        pos = (0.0, 0.0, 0.01)
+        # points = project_cube.projectPoints(pos)
+        # for point in points:
+        #     # __import__('pudb').set_trace()
+        #     cv2.circle(image_proj, (int(point[0][0]), int(point[0][1])), 0, (0,0,255), -1)
 
-        draw_line(image_proj, points)
+        render_cube(project_cube, pos, image_proj)
+        # draw_line(image_proj, points)
 
         cv2.imshow("camera60", gray60_thresh)
         cv2.imshow("proj cube", image_proj)
@@ -588,6 +676,11 @@ def visualise_blobs():
         cv2.imshow("hough lines", image60_cp)
         cv2.imshow("contours", image_cor)
         cv2.imshow("approx polygons", image_poly)
+        # cv2.imshow("camera60 components", imshow_components(out60[1] == 16))
+
+        image_temp = imshow_components(out60[1])
+        render_cube(project_cube, pos, image_temp)
+        cv2.imshow("camera60 components", image_temp)
         # cv2.imshow("corners", corners)
         # cv2.imshow("harris corners", harr_corners)
         # cv2.imshow("contoured image", contoured_image)
@@ -658,7 +751,128 @@ def main():
     # draw connected components on the segmentation maps
     # visualise
 
+def estimate_pose():
+
+    # initialise data reading
+    data_dir = "/home/aditya/real_output/45608/"
+    camera_data = "/home/aditya/real_output/45608/camera_data.dat"
+    log_reader = tricamera.LogReader(camera_data)
+
+    # cube projection instance
+    project_cube = ProjectCube()
+
+    # maintain a queue for cobntours
+    n_con = 1
+    contour_q = Queue(maxsize=n_con)
+
+    for observation in log_reader.data:
+
+        # read images from raw data
+        image60 = convert_image(observation.cameras[0].image, format="bgr")
+        image180 = convert_image(observation.cameras[1].image, format="bgr")
+        image300 = convert_image(observation.cameras[2].image, format="bgr")
+
+        # read mask information
+        mask60 = segment_image(image60)
+        mask180 = segment_image(image180)
+        mask300 = segment_image(image300)
+
+        ######################################################################
+        #                   compute connected componenets                    #
+        ######################################################################
+
+        # overlay mask over image
+        # this is not working, needs more attention
+        mod60 = cv2.cvtColor(image60, cv2.COLOR_BGR2BGRA)
+        mod60[:, :, 3] = mask60.astype(np.uint8)
+        mod180 = cv2.cvtColor(image180, cv2.COLOR_BGR2BGRA)
+        mod180[:, :, 3] = mask180.astype(np.uint8)
+        mod300 = cv2.cvtColor(image300, cv2.COLOR_BGR2BGRA)
+        mod300[:, :, 3] = mask300.astype(np.uint8)
+
+        # perform connected components on the binary mask image
+        out60 = cv2.connectedComponentsWithStats(mask60, 4, cv2.CV_32S)
+        # print("components in 60: {}".format(out60[0]))
+        out180 = cv2.connectedComponentsWithStats(mask180, 4, cv2.CV_32S)
+        # print("components in 180: {}".format(out180[0]))
+        out300 = cv2.connectedComponentsWithStats(mask300, 4, cv2.CV_32S)
+        # __import__('pudb').set_trace()
+        # print("components in 300: {}".format(out300[0]))
+        ######################################################################
+        #                  end of connected component blobs                  #
+        ######################################################################
+
+        # apply blurring on the mask to remove any rogue holes within the
+        # segment
+        mask60_blur = cv2.medianBlur(mask60, 5)
+
+        # convert original image to grayscale
+        gray60 = cv2.cvtColor(image60, cv2.COLOR_BGR2GRAY)
+
+        # get the negative of grayscale image
+        gray60_neg = 255-gray60
+
+        # look in the mask where dice exists
+        x60, y60 = np.where(mask60_blur==0)
+
+        # make non dice pixels 0
+        gray60_neg[x60, y60] = 0
+
+        # detect edges
+        edge = cv2.Canny(gray60_neg, 200, 250)
+
+        # get a copy of the edges
+        edges_cp = np.copy(edge)
+
+        # get contours
+        contours, h = cv2.findContours(np.asarray(edge), cv2.RETR_TREE,
+                                       cv2.CHAIN_APPROX_NONE)
+        # update the contour queue
+        if not contour_q.full():
+            contour_q.put(contours)
+        else:
+            contour_q.get()
+            contour_q.put(contours)
+
+        # maintain a list of cumulative contours
+        cum_contours = list(itertools.chain(*list(contour_q.queue)))
+
+        # approximate polygons for each contour
+        polygons = []
+        for cnt in cum_contours:
+            poly = cv2.approxPolyDP(cnt, 3, True)
+            polygons.append(poly)
+
+
+        # now we have everything we need to construct pose of dice
+        # let's visualise it
+
+        image_temp = imshow_components(out60[1] == 17)
+        cv2.drawContours(image_temp, polygons, -1, (255, 255, 0))
+        pos = (0.0, 0.0, 0.05)
+        render_cube(project_cube, pos, image_temp)
+        cv2.imshow("camera60 components", image_temp)
+        if cv2.waitKey(0) == ord('c'):
+            continue
+        elif cv2.waitKey(0) == ord('q'):
+            sys.exit()
+
+
+
+
+
+def hausdorf_distance(set1, set2):
+    """hausdorf_distance.
+    computes hausdorff distance between two sets of points
+
+    Args:
+        set1: numpy array of the order (M, N)
+        set2: numpy array of the order (O, N)
+    """
+    return max(directed_hausdorff(set1, set2), directed_hausdorff(set2, set1))
+
 if __name__ == "__main__":
     # main()
     # visualise_segments()
     visualise_blobs()
+    # estimate_pose()

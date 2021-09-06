@@ -106,7 +106,10 @@ class PointAtDieGoalPositionsPolicy:
         )
 
         # initial joint positions (lifting the fingers up)
-        self.joint_positions = np.array([0, 1.5, -2.7] * 3)
+        CONTRACTED_JOINT_CONF = np.array([0.0, 1.4, -2.4, 0.0, 1.4, -2.4, 0.0, 1.4, -2.4], dtype=np.float32)
+        # self.joint_positions = np.array([0, 1.5, -2.7] * 3)
+        self.joint_positions = CONTRACTED_JOINT_CONF
+        self.init_positions = CONTRACTED_JOINT_CONF
 
     def clip_to_space(self, action):
         return np.clip(action, self.action_space.low, self.action_space.high)
@@ -139,7 +142,8 @@ class PointAtDieGoalPositionsPolicy:
             )
 
             # make sure to not exceed the allowed action space
-            self.joint_positions = self.clip_to_space(self.joint_positions)
+            # self.joint_positions = self.clip_to_space(self.joint_positions)
+            self.joint_positions = self.init_positions
 
         # make sure to return a copy, not a reference to self.joint_positions
         return np.array(self.joint_positions)
