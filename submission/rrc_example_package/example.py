@@ -143,7 +143,7 @@ class PointAtDieGoalPositionsPolicy:
 
             # make sure to not exceed the allowed action space
             # self.joint_positions = self.clip_to_space(self.joint_positions)
-            self.joint_positions = self.init_positions
+            self.joint_positions = self.clip_to_space(self.init_positions)
 
         # make sure to return a copy, not a reference to self.joint_positions
         return np.array(self.joint_positions)
