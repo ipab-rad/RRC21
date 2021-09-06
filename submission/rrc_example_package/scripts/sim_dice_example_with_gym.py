@@ -14,16 +14,16 @@ def main():
         visualization=True,
     )
 
-    machine = create_machine(env)
+    # machine = create_machine(env)
     is_done = False
     observation = env.reset()
-    machine.reset()
+    # machine.reset()
     t = 0
 
-    # policy = PointAtDieGoalPositionsPolicy(env.action_space, env.current_goal)
+    policy = PointAtDieGoalPositionsPolicy(env.action_space, env.current_goal)
     while not is_done:
-        # action = policy.predict(observation, t)
-        action = machine(env)
+        action = policy.predict(observation, t)
+        # action = machine(env)
         observation, reward, is_done, info = env.step(action)
         t = info["time_index"]
 
