@@ -879,7 +879,7 @@ def estimate_pose():
         if target_poly is None:
             raise ValueError("There is no polygon corresponding to this\
                              centroid")
-        cv2.drawContours(image_temp, target_poly, -1, (255, 255, 0))
+        cv2.drawContours(image_temp, [target_poly], -1, (255, 255, 0))
         # cv2.drawContours(image_temp, polygons, -1, (255, 255, 0))
         pos = (0.0, 0.0, 0.05)
         projected_points = render_cube(project_cube, pos, image_temp)
