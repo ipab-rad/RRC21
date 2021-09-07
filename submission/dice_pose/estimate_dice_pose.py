@@ -9,6 +9,7 @@ import itertools
 import typing
 from scipy.spatial.transform import Rotation
 from scipy.spatial.distance import directed_hausdorff
+from scipy.optimize import minimize
 
 # trifinger imports
 import trifinger_cameras.py_tricamera_types as tricamera
@@ -18,6 +19,12 @@ from trifinger_simulation.camera import (
     load_camera_parameters,
     CameraParameters,
 )
+
+# optimisation related libs
+import torch
+import torch.nn as nn
+from torch import optim as opt
+from torch.autograd import Function
 
 ###############################################################################
 #                     Some constants related to the arena                     #
@@ -58,6 +65,7 @@ FACE_CORNERS = (
 Cell = typing.Tuple[int, int]
 Position = typing.Sequence[float]
 Goal = typing.Sequence[Position]
+
 
 class DicePose:
     def __init__(self):
@@ -302,15 +310,41 @@ def render_cube(project_cube, pos, image):
         pos: position in the real world where the cube needs to be rendered
         image: image to render cube on
     """
-    points = project_cube.projectPoints(pos)
+    point_numpy = np.asarray([pos[0], pos[1], 0.05])
+    points = project_cube.projectPoints(point_numpy)
     for point in points:
         cv2.circle(image, (int(point[0][0]), int(point[0][1])), 0, (0, 0, 255))
 
     draw_line(image, points)
     return points
 
-def fit():
-    return NotImplementedError()
+class HausdorffOptim():
+    def __init__(self, polygon, project_cube, image):
+        self.polygon = polygon
+        self.project_cube = project_cube
+        self.image = image
+        self.result = []
+
+    def hausdorff_loss(self, x):
+        point_numpy = np.asarray([x[0], x[1], 0.05])
+        points = self.project_cube.projectPoints(point_numpy)
+        return hausdorf_distance(np.squeeze(self.polygon, axis=1),
+                                 np.squeeze(points, axis=1))
+
+    def fit(self):
+        options={'atol':1, 'disp':True}
+        pos = [0.0, 0.0]
+        result = minimize(self.hausdorff_loss, pos, method="nelder-mead",
+                          options=options, callback=self.visualise)
+        return result.x
+
+    def visualise(self, xk):
+        cv2.drawContours(self.image, [self.polygon], -1, (255, 255, 0))
+        _ = render_cube(self.project_cube, xk, self.image)
+
+        cv2.imshow("optimising", self.image)
+        cv2.waitKey(33)
+
 
 
 
@@ -875,14 +909,30 @@ def estimate_pose():
         # let's visualise it
 
         image_temp = imshow_components(out60[1] == 17)
+        image_optim = np.copy(image_temp)
         target_poly = whichPolygon(polygons, out60[3][17])
         if target_poly is None:
             raise ValueError("There is no polygon corresponding to this\
                              centroid")
         cv2.drawContours(image_temp, [target_poly], -1, (255, 255, 0))
         # cv2.drawContours(image_temp, polygons, -1, (255, 255, 0))
-        pos = (0.0, 0.0, 0.05)
-        projected_points = render_cube(project_cube, pos, image_temp)
+        pos = [0.0, 0.0]
+        projected_points = render_cube(project_cube, pos, image_optim)
+
+        # you now have two sets of points
+        # let's optimise the hausdorff distance and visualise
+        # calculate loss
+        # backward pass
+        # calculate gradients
+        # update
+        # visualise
+        optimiser = HausdorffOptim(target_poly, project_cube, image_optim)
+        optimiser.fit()
+        sys.exit()
+
+
+
+
         __import__('pudb').set_trace()
         # draw_points(image_temp, out60[3][16])
         draw_point(image_temp, out60[3][17])
@@ -895,8 +945,6 @@ def estimate_pose():
 
 
 
-
-
 def hausdorf_distance(set1, set2):
     """hausdorf_distance.
     computes hausdorff distance between two sets of points
@@ -905,7 +953,14 @@ def hausdorf_distance(set1, set2):
         set1: numpy array of the order (M, N)
         set2: numpy array of the order (O, N)
     """
-    return max(directed_hausdorff(set1, set2), directed_hausdorff(set2, set1))
+    # __import__('pudb').set_trace()
+    return max(directed_hausdorff(set1, set2)[0], directed_hausdorff(set2,
+                                                                     set1)[0])
+
+
+
+
+
 
 if __name__ == "__main__":
     # main()
