@@ -268,16 +268,15 @@ class ProjectCube:
         )
         pass
 
-    def projectPoints(self, pos: Position):
+    def projectPoints(self, pos: Position, camera):
         """
         Project the given 3d position onto the camera's perspective
         individually
         """
 
-
         # get camera position and orientation separately
-        tvec = self.camera_params[0].tf_world_to_camera[:3, 3] # translation vector
-        rmat = self.camera_params[0].tf_world_to_camera[:3, :3] # rotation matrix
+        tvec = self.camera_params[camera].tf_world_to_camera[:3, 3] # translation vector
+        rmat = self.camera_params[camera].tf_world_to_camera[:3, :3] # rotation matrix
         rvec = Rotation.from_matrix(rmat).as_rotvec() # convert to rotation vector
 
         # retrieve corners of the imaginary cube
@@ -288,8 +287,8 @@ class ProjectCube:
             corners,
             rvec,
             tvec,
-            self.camera_params[0].camera_matrix,
-            self.camera_params[0].distortion_coefficients,
+            self.camera_params[camera].camera_matrix,
+            self.camera_params[camera].distortion_coefficients,
         )
 
         return projected_corners
@@ -299,7 +298,7 @@ class ProjectCube:
 #               Exploration funtions for dice pose construction               #
 ###############################################################################
 
-def render_cube(project_cube, pos, image):
+def render_cube(project_cube, pos, image, camera):
     """render_cube.
     Projects a 3d cube onto the image, and then renders it on the image
     provided
@@ -311,7 +310,7 @@ def render_cube(project_cube, pos, image):
         image: image to render cube on
     """
     point_numpy = np.asarray([pos[0], pos[1], 0.05])
-    points = project_cube.projectPoints(point_numpy)
+    points = project_cube.projectPoints(point_numpy, camera)
     for point in points:
         cv2.circle(image, (int(point[0][0]), int(point[0][1])), 0, (0, 0, 255))
 
@@ -325,13 +324,20 @@ class HausdorffOptim():
         self.image = image
         self.result = []
 
+        # index of the current camera
+        self.camera = 0
+
     def hausdorff_loss(self, x):
         point_numpy = np.asarray([x[0], x[1], 0.05])
-        points = self.project_cube.projectPoints(point_numpy)
+        points = self.project_cube.projectPoints(point_numpy, self.camera)
         return hausdorf_distance(np.squeeze(self.polygon, axis=1),
                                  np.squeeze(points, axis=1))
 
-    def fit(self):
+    def fit(self, camera, vis_image):
+
+        # fit related intialisations
+        self.camera = camera
+        self.image = vis_image
         options={'atol':1, 'disp':True}
         pos = [0.0, 0.0]
         result = minimize(self.hausdorff_loss, pos, method="nelder-mead",
@@ -340,7 +346,8 @@ class HausdorffOptim():
 
     def visualise(self, xk):
         cv2.drawContours(self.image, [self.polygon], -1, (255, 255, 0))
-        _, image = render_cube(self.project_cube, xk, np.copy(self.image))
+        _, image = render_cube(self.project_cube, xk, np.copy(self.image),
+                               self.camera)
 
         cv2.imshow("optimising", image)
         cv2.waitKey(33)
@@ -402,7 +409,6 @@ def draw_points(image, points):
 
 def draw_point(image, point):
     cv2.circle(image, (int(point[0]), int(point[1])), 1, (0, 255, 0), -1)
-
 
 def pointPolygonCheck(polygon, point):
     dis = cv2.pointPolygonTest(polygon, point, True)
@@ -724,7 +730,7 @@ def visualise_blobs():
         #     # __import__('pudb').set_trace()
         #     cv2.circle(image_proj, (int(point[0][0]), int(point[0][1])), 0, (0,0,255), -1)
 
-        _, _ = render_cube(project_cube, pos, image_proj)
+        _, _ = render_cube(project_cube, pos, image_proj, i)
         # draw_line(image_proj, points)
 
         cv2.imshow("camera60", gray60_thresh)
@@ -739,7 +745,7 @@ def visualise_blobs():
         # cv2.imshow("camera60 components", imshow_components(out60[1] == 16))
 
         image_temp = imshow_components(out60[1])
-        _, _ = render_cube(project_cube, pos, image_temp)
+        _, _ = render_cube(project_cube, pos, image_temp, i)
         cv2.imshow("camera60 components", image_temp)
         # cv2.imshow("corners", corners)
         # cv2.imshow("harris corners", harr_corners)
@@ -829,8 +835,11 @@ def estimate_pose():
 
         # read images from raw data
         image60 = convert_image(observation.cameras[0].image, format="bgr")
+        # cv2.imwrite("image60.jpg", image60)
         image180 = convert_image(observation.cameras[1].image, format="bgr")
+        # cv2.imwrite("image180.jpg", image180)
         image300 = convert_image(observation.cameras[2].image, format="bgr")
+        # cv2.imwrite("image300.jpg", image300)
 
         # read mask information
         mask60 = segment_image(image60)
@@ -862,87 +871,136 @@ def estimate_pose():
         #                  end of connected component blobs                  #
         ######################################################################
 
+        ######################################################################
+        #                   Approximate polygons on blobs                    #
+        ######################################################################
         # apply blurring on the mask to remove any rogue holes within the
         # segment
-        mask60_blur = cv2.medianBlur(mask60, 5)
 
-        # convert original image to grayscale
-        gray60 = cv2.cvtColor(image60, cv2.COLOR_BGR2GRAY)
+        images = [image60, image180, image300]
+        blobs = [out60, out180, out300]
+        masks = [mask60, mask180, mask300]
 
-        # get the negative of grayscale image
-        gray60_neg = 255-gray60
+        for i in range(3):
 
-        # look in the mask where dice exists
-        x60, y60 = np.where(mask60_blur==0)
+            mask_blur = cv2.medianBlur(masks[i], 5)
 
-        # make non dice pixels 0
-        gray60_neg[x60, y60] = 0
+            # convert original image to grayscale
+            gray = cv2.cvtColor(images[i], cv2.COLOR_BGR2GRAY)
 
-        # detect edges
-        edge = cv2.Canny(gray60_neg, 200, 250)
+            # get the negative of grayscale image
+            gray_neg = 255-gray
 
-        # get a copy of the edges
-        edges_cp = np.copy(edge)
+            # look in the mask where dice exists
+            x, y = np.where(mask_blur==0)
 
-        # get contours
-        contours, h = cv2.findContours(np.asarray(edge), cv2.RETR_TREE,
-                                       cv2.CHAIN_APPROX_NONE)
-        # update the contour queue
-        if not contour_q.full():
-            contour_q.put(contours)
-        else:
-            contour_q.get()
-            contour_q.put(contours)
+            # make non dice pixels 0
+            gray_neg[x, y] = 0
 
-        # maintain a list of cumulative contours
-        cum_contours = list(itertools.chain(*list(contour_q.queue)))
+            # detect edges
+            edge = cv2.Canny(gray_neg, 200, 250)
 
-        # approximate polygons for each contour
-        polygons = []
-        for cnt in cum_contours:
-            poly = cv2.approxPolyDP(cnt, 3, True)
-            if poly.shape[0] >= 4:
-                polygons.append(poly)
+            # get a copy of the edges
+            edges_cp = np.copy(edge)
 
+            # get contours
+            contours, h = cv2.findContours(np.asarray(edge), cv2.RETR_TREE,
+                                           cv2.CHAIN_APPROX_NONE)
+            # update the contour queue
+            if not contour_q.full():
+                contour_q.put(contours)
+            else:
+                contour_q.get()
+                contour_q.put(contours)
 
-        # now we have everything we need to construct pose of dice
-        # let's visualise it
+            # maintain a list of cumulative contours
+            cum_contours = list(itertools.chain(*list(contour_q.queue)))
 
-        image_temp = imshow_components(out60[1] == 17)
-        image_optim = np.copy(image_temp)
-        target_poly = whichPolygon(polygons, out60[3][17])
-        if target_poly is None:
-            raise ValueError("There is no polygon corresponding to this\
-                             centroid")
-        cv2.drawContours(image_temp, [target_poly], -1, (255, 255, 0))
-        # cv2.drawContours(image_temp, polygons, -1, (255, 255, 0))
-        pos = [0.0, 0.0]
-        projected_points, _ = render_cube(project_cube, pos, image_optim)
+            # approximate polygons for each contour
+            polygons = []
+            for cnt in cum_contours:
+                poly = cv2.approxPolyDP(cnt, 3, True)
+                if poly.shape[0] >= 4:
+                    polygons.append(poly)
 
-        # you now have two sets of points
-        # let's optimise the hausdorff distance and visualise
-        # calculate loss
-        # backward pass
-        # calculate gradients
-        # update
-        # visualise
-        optimiser = HausdorffOptim(target_poly, project_cube, image_optim)
-        position = optimiser.fit()
-        print("position of the dice is: {}, {}, 0.05".format(position[0], position[1]))
-        sys.exit()
+            ######################################################################
+            #                  Approximate polygons on blob end                  #
+            ######################################################################
 
 
+            ######################################################################
+            #                 Hausdorff minimisation block begin                 #
+            ######################################################################
+            # now we have everything we need to construct pose of dice
+            # let's visualise it
+            arena_pose = []
+
+            for blob_num in range(1, blobs[i][0]):
+                image_temp = imshow_components(blobs[i][1] == blob_num)
+                image_optim = np.copy(image_temp)
+                target_poly = whichPolygon(polygons, blobs[i][3][blob_num])
+                if target_poly is None:
+                    continue
+                    # raise ValueError("There is no polygon corresponding to this\
+                    #                  centroid")
+
+                # cv2.drawContours(image_temp, [target_poly], -1, (255, 255, 0))
+                cv2.drawContours(image_temp, polygons, -1, (255, 255, 0))
+                pos = [0.0, 0.0]
+                projected_points, _ = render_cube(project_cube, pos,
+                                                  image_optim, i)
+
+                # you now have two sets of points
+                # let's optimise the hausdorff distance and visualise
+                # calculate loss
+                # backward pass
+                # calculate gradients
+                # update
+                # visualise
+                optimiser = HausdorffOptim(target_poly, project_cube, image_optim)
+                position_dice = optimiser.fit(i, image_optim)
+                print("position of the dice is: {}, {}, 0.05".format(position_dice[0],
+                                                                     position_dice[1]))
+
+                estimated_pose, pose_image = render_cube(project_cube, position_dice,
+                                                         np.copy(images[i]), i)
+
+                arena_pose.append(position_dice)
+
+                ######################################################################
+                #                  Hausdorff minimisation block end                  #
+                ######################################################################
 
 
-        __import__('pudb').set_trace()
-        # draw_points(image_temp, out60[3][16])
-        draw_point(image_temp, out60[3][17])
-        cv2.imshow("camera60 components", image_temp)
-        key = cv2.waitKey(0)
-        if key == ord('q'):
-            sys.exit()
-        elif key == ord('c'):
-            continue
+
+
+                ######################################################################
+                #                        Visualisation begin                         #
+                ######################################################################
+                # __import__('pudb').set_trace()
+                # draw_points(image_temp, out60[3][16])
+                draw_point(image_temp, blobs[i][3][blob_num])
+                cv2.imshow("camera {} components".format(i), image_temp)
+                cv2.imshow("estimated pose from camera {}".format(i), pose_image)
+
+
+
+            final_pose_image = np.copy(images[i])
+            for pos in arena_pose:
+                _, final_pose_image = render_cube(project_cube, pos,
+                                                  final_pose_image, i)
+
+            cv2.imshow("final pose estimation for camera {}".format(i),
+                       final_pose_image)
+            key = cv2.waitKey(0)
+            if key == ord('q'):
+                sys.exit()
+            elif key == ord('c'):
+                continue
+
+                ######################################################################
+                #                         Visualisation end                          #
+                ######################################################################
 
 
 
