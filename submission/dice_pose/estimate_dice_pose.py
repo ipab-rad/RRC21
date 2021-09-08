@@ -316,7 +316,7 @@ def render_cube(project_cube, pos, image):
         cv2.circle(image, (int(point[0][0]), int(point[0][1])), 0, (0, 0, 255))
 
     draw_line(image, points)
-    return points
+    return points, image
 
 class HausdorffOptim():
     def __init__(self, polygon, project_cube, image):
@@ -340,9 +340,9 @@ class HausdorffOptim():
 
     def visualise(self, xk):
         cv2.drawContours(self.image, [self.polygon], -1, (255, 255, 0))
-        _ = render_cube(self.project_cube, xk, self.image)
+        _, image = render_cube(self.project_cube, xk, np.copy(self.image))
 
-        cv2.imshow("optimising", self.image)
+        cv2.imshow("optimising", image)
         cv2.waitKey(33)
 
 
@@ -724,7 +724,7 @@ def visualise_blobs():
         #     # __import__('pudb').set_trace()
         #     cv2.circle(image_proj, (int(point[0][0]), int(point[0][1])), 0, (0,0,255), -1)
 
-        render_cube(project_cube, pos, image_proj)
+        _, _ = render_cube(project_cube, pos, image_proj)
         # draw_line(image_proj, points)
 
         cv2.imshow("camera60", gray60_thresh)
@@ -739,7 +739,7 @@ def visualise_blobs():
         # cv2.imshow("camera60 components", imshow_components(out60[1] == 16))
 
         image_temp = imshow_components(out60[1])
-        render_cube(project_cube, pos, image_temp)
+        _, _ = render_cube(project_cube, pos, image_temp)
         cv2.imshow("camera60 components", image_temp)
         # cv2.imshow("corners", corners)
         # cv2.imshow("harris corners", harr_corners)
@@ -917,7 +917,7 @@ def estimate_pose():
         cv2.drawContours(image_temp, [target_poly], -1, (255, 255, 0))
         # cv2.drawContours(image_temp, polygons, -1, (255, 255, 0))
         pos = [0.0, 0.0]
-        projected_points = render_cube(project_cube, pos, image_optim)
+        projected_points, _ = render_cube(project_cube, pos, image_optim)
 
         # you now have two sets of points
         # let's optimise the hausdorff distance and visualise
@@ -927,7 +927,8 @@ def estimate_pose():
         # update
         # visualise
         optimiser = HausdorffOptim(target_poly, project_cube, image_optim)
-        optimiser.fit()
+        position = optimiser.fit()
+        print("position of the dice is: {}, {}, 0.05".format(position[0], position[1]))
         sys.exit()
 
 
