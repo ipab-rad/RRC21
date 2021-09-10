@@ -41,7 +41,6 @@ class ActionType(enum.Enum):
     #: applying them to the robot.
     TORQUE_AND_POSITION = enum.auto()
 
-
 class RealRobotRearrangeDiceEnv(gym.GoalEnv):
     """Gym environment for rearranging dice with a TriFingerPro robot."""
 
@@ -191,27 +190,38 @@ class RealRobotRearrangeDiceEnv(gym.GoalEnv):
         #     segment_image(c.image) for c in camera_observation.cameras
         # ]
 
-        segmentation_masks = []
-        count = 0
-        for c in camera_observation.cameras:
-            count += 1
-            print('image type: {}'.format(type(c.image)))
-            mask = segment_image(convert_image(c.image, format="bgr"))
-            segmentation_masks.append(mask)
-            mask = np.asarray(mask)
-            print('unique values: {}'.format(np.unique(mask)))
-            cv2.imwrite("/output/{}_segmap_{}.jpeg".format(count, c.timestamp),
-                       mask)
+        images = [
+            convert_image(c.image, format="bgr") for c in camera_observation.cameras
+        ]
+
+        segmentation_masks = [
+            segment_image(convert_image(c.image, format="bgr")) for c in
+            camera_observation.cameras
+        ]
+
+        # segmentation_masks = []
+        # count = 0
+        # for c in camera_observation.cameras:
+        #     count += 1
+        #     print('image type: {}'.format(type(c.image)))
+        #     mask = segment_image(convert_image(c.image, format="bgr"))
+        #     segmentation_masks.append(mask)
+        #     mask = np.asarray(mask)
+        #     print('unique values: {}'.format(np.unique(mask)))
+        #     cv2.imwrite("/output/{}_segmap_{}.jpeg".format(count, c.timestamp),
+        #                mask)
 
         observation = {
             "robot_observation": {
                 "position": robot_observation.position,
                 "velocity": robot_observation.velocity,
                 "torque": robot_observation.torque,
+                "tip_force": robot_observation.tip_force,
             },
             "action": action,
             "desired_goal": self.goal_masks,
             "achieved_goal": segmentation_masks,
+            "camera_images": images,
         }
         return observation
 
@@ -319,6 +329,9 @@ class SimRearrangeDiceEnv(gym.GoalEnv):
         action_type: ActionType = ActionType.POSITION,
         step_size: int = 1,
         visualization: bool = True,
+        frameskip=3,
+        sim=False,
+        rank=0,
     ):
         """Initialize.
         Args:
@@ -332,6 +345,7 @@ class SimRearrangeDiceEnv(gym.GoalEnv):
         # Basic initialization
         # ====================
 
+        self.frameskip = frameskip
         if goal is not None:
             task.validate_goal(goal)
         self.goal = goal
@@ -569,6 +583,11 @@ class SimRearrangeDiceEnv(gym.GoalEnv):
         robot_observation = self.platform.get_robot_observation(t)
         camera_observation = self.platform.get_camera_observation(t)
 
+        # __import__('pudb').set_trace()
+        images = [
+            cv2.cvtColor(c.image, cv2.COLOR_RGB2BGR) for c in
+            camera_observation.cameras
+        ]
         segmentation_masks = [
             segment_image(cv2.cvtColor(c.image, cv2.COLOR_RGB2BGR))
             for c in camera_observation.cameras
@@ -579,10 +598,12 @@ class SimRearrangeDiceEnv(gym.GoalEnv):
                 "position": robot_observation.position,
                 "velocity": robot_observation.velocity,
                 "torque": robot_observation.torque,
+                "tip_force": robot_observation.tip_force,
             },
             "action": action,
             "desired_goal": self.goal_masks,
             "achieved_goal": segmentation_masks,
+            "camera_images": images,
         }
         return observation
 

@@ -33,7 +33,8 @@ class FailureState(State):
 
     def __call__(self, obs, info={}):
         # hold current position forever
-        return self.get_action(position=obs['robot_position']), self, info
+        __import__('pudb').set_trace()
+        return self.get_action(position=obs['robot_observation']['position']), self, info
 
 
 class OpenLoopState(State):
@@ -60,6 +61,7 @@ class OpenLoopState(State):
         try:
             if self.actions is None:
                 self.actions = self.get_action_generator(obs, info)
+
             action, info = self.actions.__next__()
             return action, self, info
         except Exception as e:
@@ -80,7 +82,7 @@ class WaitState(OpenLoopState):
         self.steps = steps
 
     def get_action_generator(self, obs, info=None):
-        yield self.get_action(position=obs['robot_position'],
+        yield self.get_action(position=obs['robot_observation']['position'],
                               frameskip=self.steps), info
 
 

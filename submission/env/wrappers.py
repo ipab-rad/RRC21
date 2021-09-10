@@ -4,7 +4,13 @@ import numpy as np
 import gym
 import time
 import cv2
-from env.cube_env import ActionType
+
+# uncomment when you want to use for cube trajectory task
+# from env.cube_env import ActionType
+
+# comment for when you want to use for dice task
+from rrc_example_package.rearrange_dice_env import ActionType
+
 from trifinger_simulation import trifingerpro_limits
 from trifinger_simulation import camera
 
@@ -73,7 +79,7 @@ class action_type_to:
     def _get_action_space(self, action_type):
         import gym
         from trifinger_simulation import TriFingerPlatform
-        from env.cube_env import ActionType
+        # from env.cube_env import ActionType
         spaces = TriFingerPlatform.spaces
         if action_type == ActionType.TORQUE:
             action_space = spaces.robot_torque.gym

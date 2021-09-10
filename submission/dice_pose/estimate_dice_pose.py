@@ -19,6 +19,7 @@ from trifinger_simulation.camera import (
     load_camera_parameters,
     CameraParameters,
 )
+from trifinger_simulation.tasks import rearrange_dice
 
 # optimisation related libs
 import torch
@@ -67,9 +68,6 @@ Position = typing.Sequence[float]
 Goal = typing.Sequence[Position]
 
 
-class DicePose:
-    def __init__(self):
-        pass
 
 def draw_line(image, points):
     color = (0, 0, 255)
@@ -309,7 +307,7 @@ def render_cube(project_cube, pos, image, camera):
         pos: position in the real world where the cube needs to be rendered
         image: image to render cube on
     """
-    point_numpy = np.asarray([pos[0], pos[1], 0.05])
+    point_numpy = np.asarray([pos[0], pos[1], 0.01])
     points = project_cube.projectPoints(point_numpy, camera)
     for point in points:
         cv2.circle(image, (int(point[0][0]), int(point[0][1])), 0, (0, 0, 255))
@@ -318,7 +316,7 @@ def render_cube(project_cube, pos, image, camera):
     return points, image
 
 class HausdorffOptim():
-    def __init__(self, polygon, project_cube, image):
+    def __init__(self, polygon, project_cube, image=None):
         self.polygon = polygon
         self.project_cube = project_cube
         self.image = image
@@ -328,20 +326,24 @@ class HausdorffOptim():
         self.camera = 0
 
     def hausdorff_loss(self, x):
-        point_numpy = np.asarray([x[0], x[1], 0.05])
+        point_numpy = np.asarray([x[0], x[1], 0.01])
         points = self.project_cube.projectPoints(point_numpy, self.camera)
         return hausdorf_distance(np.squeeze(self.polygon, axis=1),
                                  np.squeeze(points, axis=1))
 
-    def fit(self, camera, vis_image):
+    def fit(self, camera, vis_image=None):
 
         # fit related intialisations
         self.camera = camera
         self.image = vis_image
         options={'atol':1, 'disp':True}
         pos = [0.0, 0.0]
-        result = minimize(self.hausdorff_loss, pos, method="nelder-mead",
-                          options=options, callback=self.visualise)
+        if self.image is not None:
+            result = minimize(self.hausdorff_loss, pos, method="nelder-mead",
+                              options=options, callback=self.visualise)
+        else:
+            result = minimize(self.hausdorff_loss, pos, method="nelder-mead",
+                              options=options)
         return result.x
 
     def visualise(self, xk):
@@ -847,6 +849,35 @@ def estimate_pose():
         mask300 = segment_image(image300)
 
         ######################################################################
+        #                         debugging DicePose                         #
+        ######################################################################
+        images = [image60, image180, image300]
+        masks = [mask60, mask180, mask300]
+        pose_estimator = DicePose(images, masks)
+        pose_estimator.estimate()
+
+        dice_poses = pose_estimator.resolve()
+        arena_pose = list(dice_poses.queue)
+        for i in range(3):
+            final_pose_image = np.copy(images[i])
+            for pos in arena_pose:
+                _, final_pose_image = render_cube(project_cube, pos,
+                                                  final_pose_image, i)
+
+            cv2.imshow("final pose estimation for camera {}".format(i),
+                       final_pose_image)
+            key = cv2.waitKey(0)
+            if key == ord('q'):
+                sys.exit()
+            elif key == ord('c'):
+                continue
+
+
+
+
+        sys.exit()
+
+        ######################################################################
         #                   compute connected componenets                    #
         ######################################################################
 
@@ -876,10 +907,10 @@ def estimate_pose():
         ######################################################################
         # apply blurring on the mask to remove any rogue holes within the
         # segment
-
         images = [image60, image180, image300]
-        blobs = [out60, out180, out300]
         masks = [mask60, mask180, mask300]
+
+        blobs = [out60, out180, out300]
 
         for i in range(3):
 
@@ -959,7 +990,7 @@ def estimate_pose():
                 # visualise
                 optimiser = HausdorffOptim(target_poly, project_cube, image_optim)
                 position_dice = optimiser.fit(i, image_optim)
-                print("position of the dice is: {}, {}, 0.05".format(position_dice[0],
+                print("position of the dice is: {}, {}, 0.01".format(position_dice[0],
                                                                      position_dice[1]))
 
                 estimated_pose, pose_image = render_cube(project_cube, position_dice,
@@ -1002,8 +1033,6 @@ def estimate_pose():
                 #                         Visualisation end                          #
                 ######################################################################
 
-
-
 def hausdorf_distance(set1, set2):
     """hausdorf_distance.
     computes hausdorff distance between two sets of points
@@ -1016,6 +1045,162 @@ def hausdorf_distance(set1, set2):
     return max(directed_hausdorff(set1, set2)[0], directed_hausdorff(set2,
                                                                      set1)[0])
 
+
+###############################################################################
+#                       Main dice pose estimation class                       #
+###############################################################################
+
+class DicePose:
+    """DicePose.
+
+    A class that takes in segmentation maps and corresponding images from the
+    trifinger robot and constructs dice pose. As of now this is a pretty
+    slow process. Need to parallise this
+    # TODO: either thread it, or create subprocesses <10-09-21, yourname> #
+    """
+
+    def __init__(self, images, masks):
+        self.images = images
+        self.masks = masks
+        return
+
+    def estimate(self):
+        """estimate.
+
+        Function that estimates dice pose from the given image and its
+        corresponding segmentation mask
+
+        How does this happen:
+            1. extract connected component blobs
+            2. extract relevant image features using segmentation map. This
+            will give you all the dice pixels in the image
+            3. approximate polygons on the dice
+            4. use polygons and projected virtual dice to minimize hausdorff
+            distance
+        """
+
+        n_con = 1
+        contour_q = Queue(maxsize=n_con)
+
+        # camera projection for hausdorff
+        project_cube = ProjectCube()
+
+        # store arena pose
+        self.arena_perspective_pose = {}
+
+        for i in range(3):
+            image = self.images[i]
+            mask = self.masks[i]
+
+            #######################################
+            #  extract connected component blobs  #
+            #######################################
+
+            out = cv2.connectedComponentsWithStats(mask, 4, cv2.CV_32S)
+
+            ##################
+            #  extract dice  #
+            ##################
+
+            mask_blur = cv2.medianBlur(mask, 5)
+
+            # convert original iamge to grayscale
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+            # get the negative of the grayscale image
+            gray_neg = 255-gray
+
+            # look in the mask where dice exists
+            x, y = np.where(mask_blur==0)
+
+            # make non dice pixels 0
+            gray_neg[x, y] = 0
+
+            ######################
+            #  extract polygons  #
+            ######################
+
+            # detect edges
+            edge = cv2.Canny(gray_neg, 200, 250)
+
+            # get a copy of the edges
+            edges_cp = np.copy(edge)
+
+            # get contours
+            contours, h = cv2.findContours(np.asarray(edge), cv2.RETR_TREE,
+                                           cv2.CHAIN_APPROX_NONE)
+
+            # update the contour queue
+            if not contour_q.full():
+                contour_q.put(contours)
+            else:
+                contour_q.get()
+                contour_q.put(contours)
+
+            # maintain a list of cumulative contours
+            cum_contours = list(itertools.chain(*list(contour_q.queue)))
+
+            # approximate polygons for each contour
+            polygons = []
+            for cnt in cum_contours:
+                poly = cv2.approxPolyDP(cnt, 3, True)
+                if poly.shape[0] >= 4:
+                    polygons.append(poly)
+
+            ########################
+            #  optimise hausdorff  #
+            ########################
+
+            arena_pose = []
+
+            for blob in range(1, out[0]):
+                target_poly = whichPolygon(polygons, out[3][blob])
+                if target_poly is None:
+                    continue
+
+                init_pose = [0.0, 0.0]
+                optimiser = HausdorffOptim(target_poly, project_cube)
+                position_dice = optimiser.fit(i)
+                np.append(position_dice, 0.01)
+                arena_pose.append(position_dice)
+
+            self.arena_perspective_pose['camera_{}'.format(i+1)] = arena_pose
+
+
+    def resolve(self):
+        """resolve.
+        resolves estimated poses from each camera and creates a queue of
+        estimated poses. This is what the state machine will interact with
+        """
+
+        # self.dice_pose_q = Queue(maxsize=rearrange_dice.NUM_DICE)
+        self.dice_pose_q = Queue()
+
+
+        keys = self.arena_perspective_pose.keys()
+        for key in keys:
+            for pose in self.arena_perspective_pose[key]:
+                if self.dice_pose_q.empty():
+                    self.dice_pose_q.put(pose)
+                    continue
+                if self._check_proximity(pose):
+                    # if not self.dice_pose_q.full():
+                    self.dice_pose_q.put(pose)
+                # self.dice_pose_q.put(pose)
+
+        return self.dice_pose_q
+
+
+    def _check_proximity(self, pose):
+        if self.dice_pose_q.empty():
+            self.dice_pose_q.put(pose)
+            return False
+
+        for dice in list(self.dice_pose_q.queue):
+            if (abs(pose[0]-dice[0])<0.01 or abs(pose[1]-dice[1]) < 0.01):
+                return False
+
+        return True
 
 
 

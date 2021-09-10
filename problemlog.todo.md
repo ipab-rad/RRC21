@@ -61,11 +61,15 @@
     - [X] connected components on the segmentation mask
     - [ ] separate dice that are shown as one component - idea is just get dice with black background
   - [ ] associate dice in each camera
-  - [ ] project imaginary dice on the image
+  - [X] project imaginary dice on the image
     - [X] project cube onto image
     - [X] use connected component blobs to isolate each single dice
     - [X] project imaginary 3d dice on image
     - [X] choose points on die and on blob
     - [X] calculate hausdorff distance.
-    - [ ] optimize distance
-      - [ ] code up the optmisation loop
+    - [X] optimize distance
+      - [X] code up the optmisation loop
+  - [ ] resolve pose estimation for segmentation blobs with multiple dice
+  - [ ] ensure that `ProjectCube` takes in correct camera parameters
+- [ ] What is the reason for frameskip
+- [ ] make state machine consumable by dice env

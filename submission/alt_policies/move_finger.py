@@ -15,6 +15,8 @@ from .states import State, StateMachine
 import numpy as np
 from .fingers import get_finger_configuration
 from mp import grasping
+from mp.const import CONTRACTED_JOINT_CONF, INIT_JOINT_CONF
+from dice_pose.estimate_dice_pose import DicePose
 
 POS1 = np.array([0.0, 1.4, -2.4, 0.0, 1.4, -2.4, 0.0, 1.4, -2.4], dtype=np.float32)
 POS2 = np.array([0.0, 1.4, -2.2, 0.0, 1.4, -2.4, 0.0, 1.4, -2.4], dtype=np.float32)
@@ -84,7 +86,6 @@ class MoveFingerState(OpenLoopState):
         for pos in [POS1, POS2, POS3]:
             yield self.get_action(position=pos, frameskip=self.steps // 2), info
 
-
 class MoveFingerToObjState(OpenLoopState):
 
     """Docstring for MoveFingerToObjState. """
@@ -124,7 +125,27 @@ class MoveFingerToObjState(OpenLoopState):
         for pos in actions:
             yield self.get_action(position=pos, frameskip=1), info
 
+class MoveFingerForDicePose(OpenLoopState):
+    def __init__(self, env, steps=300):
+        super().__init__(env)
+        self.steps = steps
 
+    def get_action_generator(self, obs, info):
+        # __import__('pudb').set_trace()
+        for pos in [CONTRACTED_JOINT_CONF, INIT_JOINT_CONF]:
+            yield self.get_action(position=pos, frameskip=self.steps // 2), info
+
+class EstimateDicePose(OpenLoopState):
+    def __init__(self, env, steps=300):
+        super().__init__(env)
+        self.steps = steps
+
+    def get_action_generator(self, obs, info):
+        pass
+
+    def _estimate_pose(self, obs):
+        pose_estimator = DicePose(obs['camera_images'], obs['achieved_goal'])
+        dice_pose = pose_estimator.estimate()
 
 
 
@@ -141,7 +162,7 @@ class PositionControlStateMachine(StateMachine):
         self.goto_init_state = states.GoToInitPoseState(self.env)
         # self.move_finger = MoveFingerState(self.env)
         self.move_finger_obj = MoveFingerToObjState(self.env)
-        self.wait = states.WaitState(self.env, 30)
+        self.wait = states.WaitState(self.env, 300)
         self.failure = states.FailureState(self.env)
 
         # define state trasitions
@@ -151,7 +172,6 @@ class PositionControlStateMachine(StateMachine):
                           failure_state=self.failure)
         return self.goto_init_state
 
-
 class DicePoseEstimationStateMachine(StateMachine):
     def build(self):
         """
@@ -160,12 +180,15 @@ class DicePoseEstimationStateMachine(StateMachine):
         """
 
         self.goto_init_state = states.GoToInitPoseState(self.env)
-        self.wait = states.WaitState(self.env, 30)
+        self.movefinger = MoveFingerState(self.env)
+        self.wait = states.WaitState(self.env, 300)
         self.failure = states.FailureState(self.env)
 
         # connect these state up
-        self.goto_init_state.connect(next_state=self.wait,
+        self.goto_init_state.connect(next_state=self.movefinger,
                                      failure_state=self.failure)
+        self.movefinger.connect(next_state=self.wait,
+                                failure_state=self.failure)
         self.wait.connect(next_state=self.goto_init_state,
                           failure_state=self.failure)
         return self.goto_init_state
