@@ -33,7 +33,6 @@ class FailureState(State):
 
     def __call__(self, obs, info={}):
         # hold current position forever
-        __import__('pudb').set_trace()
         return self.get_action(position=obs['robot_observation']['position']), self, info
 
 

@@ -13,7 +13,7 @@ from mp.action_sequences import ScriptedActions
 from mp import states
 from .states import State, StateMachine
 import numpy as np
-from .fingers import get_finger_configuration
+from .fingers import get_finger_configuration, get_finger_configuration_dice
 from mp import grasping
 from mp.const import CONTRACTED_JOINT_CONF, INIT_JOINT_CONF
 from dice_pose.estimate_dice_pose import DicePose
@@ -125,15 +125,35 @@ class MoveFingerToObjState(OpenLoopState):
         for pos in actions:
             yield self.get_action(position=pos, frameskip=1), info
 
-class MoveFingerForDicePose(OpenLoopState):
+class MoveFingerForDice(OpenLoopState):
     def __init__(self, env, steps=300):
         super().__init__(env)
         self.steps = steps
+        self.pose = None
 
     def get_action_generator(self, obs, info):
-        # __import__('pudb').set_trace()
-        for pos in [CONTRACTED_JOINT_CONF, INIT_JOINT_CONF]:
-            yield self.get_action(position=pos, frameskip=self.steps // 2), info
+        if self.pose is None:
+            self.pose = self.env.yield_pose()
+        try:
+            pose = self.pose.__next__()
+        except Exception as e:
+            self.reset()
+            self.pose = None
+            if isinstance(e, StopIteration):
+                return self.next_state(obs, info)
+            else:
+                print(f"Caught error: {e}")
+                return self.get_action(frameskip=0), self.failure_state, info
+
+        __import__('pudb').set_trace()
+        fing_mov = get_finger_configuration_dice(self.env, pose, (0, 0, 0, 1))
+        info['grasp'] = fing_mov[0]
+        actions = grasping.get_grasp_approach_actions(self.env, obs,
+                                                     fing_mov[0],
+                                                     move_finger=True)
+        for pos in actions:
+            yield self.get_action(position=pos, frameskip=1), info
+
 
 class EstimateDicePose(OpenLoopState):
     def __init__(self, env, steps=300):
@@ -141,11 +161,19 @@ class EstimateDicePose(OpenLoopState):
         self.steps = steps
 
     def get_action_generator(self, obs, info):
-        pass
+        self._estimate_pose(obs)
+        # __import__('pudb').set_trace()
+        for pos in [POS1, POS2, POS3]:
+            yield self.get_action(position=pos, frameskip=self.steps // 2), info
 
     def _estimate_pose(self, obs):
         pose_estimator = DicePose(obs['camera_images'], obs['achieved_goal'])
-        dice_pose = pose_estimator.estimate()
+        pose_estimator.estimate()
+        dice_pose = pose_estimator.resolve()
+        self.env.set_pose_queue(dice_pose)
+        return
+
+
 
 
 
@@ -180,15 +208,18 @@ class DicePoseEstimationStateMachine(StateMachine):
         """
 
         self.goto_init_state = states.GoToInitPoseState(self.env)
-        self.movefinger = MoveFingerState(self.env)
+        self.movefinger = MoveFingerForDice(self.env)
+        self.estimatepose = EstimateDicePose(self.env)
         self.wait = states.WaitState(self.env, 300)
         self.failure = states.FailureState(self.env)
 
         # connect these state up
-        self.goto_init_state.connect(next_state=self.movefinger,
+        self.goto_init_state.connect(next_state=self.estimatepose,
                                      failure_state=self.failure)
+        self.estimatepose.connect(next_state=self.movefinger,
+                                  failure_state=self.failure)
         self.movefinger.connect(next_state=self.wait,
                                 failure_state=self.failure)
-        self.wait.connect(next_state=self.goto_init_state,
+        self.wait.connect(next_state=self.estimatepose,
                           failure_state=self.failure)
         return self.goto_init_state

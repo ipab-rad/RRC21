@@ -308,6 +308,7 @@ def render_cube(project_cube, pos, image, camera):
         image: image to render cube on
     """
     point_numpy = np.asarray([pos[0], pos[1], 0.01])
+    print('camera: {}'.format(camera))
     points = project_cube.projectPoints(point_numpy, camera)
     for point in points:
         cv2.circle(image, (int(point[0][0]), int(point[0][1])), 0, (0, 0, 255))
@@ -316,11 +317,13 @@ def render_cube(project_cube, pos, image, camera):
     return points, image
 
 class HausdorffOptim():
-    def __init__(self, polygon, project_cube, image=None):
+    def __init__(self, polygon, project_cube, vid=None, image=None, write_vid=False):
         self.polygon = polygon
         self.project_cube = project_cube
         self.image = image
         self.result = []
+        self.write_vid = write_vid
+        self.vid = vid
 
         # index of the current camera
         self.camera = 0
@@ -344,6 +347,7 @@ class HausdorffOptim():
         else:
             result = minimize(self.hausdorff_loss, pos, method="nelder-mead",
                               options=options)
+        print('result: {}'.format(result.x))
         return result.x
 
     def visualise(self, xk):
@@ -352,6 +356,8 @@ class HausdorffOptim():
                                self.camera)
 
         cv2.imshow("optimising", image)
+        if self.write_vid:
+            self.vid.write(image)
         cv2.waitKey(33)
 
 
@@ -533,6 +539,27 @@ def visualise_blobs():
     camera_data = "/home/aditya/real_output/45615/camera_data.dat"
     log_reader = tricamera.LogReader(camera_data)
     detector = cv2.SimpleBlobDetector()
+    vid_save_path = '/home/aditya/output/gifvids/'
+
+
+    vid_dicegray = cv2.VideoWriter(vid_save_path+'dice_gray.avi',
+                                   cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'),
+                                  10, (270, 270))
+    vid_seg = cv2.VideoWriter(vid_save_path+'segmentation.avi',
+                                   cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'),
+                                  10, (270, 270))
+    vid_image = cv2.VideoWriter(vid_save_path+'image.avi',
+                                   cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'),
+                                  10, (270, 270))
+    vid_edges = cv2.VideoWriter(vid_save_path+'edges.avi',
+                                   cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'),
+                                  10, (270, 270))
+    vid_polygons = cv2.VideoWriter(vid_save_path+'polygons.avi',
+                                   cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'),
+                                  10, (270, 270))
+    vid_component = cv2.VideoWriter(vid_save_path+'components.avi',
+                                   cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'),
+                                  10, (270, 270))
 
     # initialise queue to store points from n consecutive frames
     n_line = 10
@@ -607,6 +634,7 @@ def visualise_blobs():
 
         # make non dice pixels 0
         gray60_neg[x60, y60] = 0
+        # vid_dicegray.write(gray60_neg)
 
         # image_cor[x60, y60, :] = 0
 
@@ -732,23 +760,28 @@ def visualise_blobs():
         #     # __import__('pudb').set_trace()
         #     cv2.circle(image_proj, (int(point[0][0]), int(point[0][1])), 0, (0,0,255), -1)
 
-        _, _ = render_cube(project_cube, pos, image_proj, i)
+        _, _ = render_cube(project_cube, pos, image_proj, 0)
         # draw_line(image_proj, points)
 
         cv2.imshow("camera60", gray60_thresh)
+        # vid_seg.write(gray60_thresh)
         cv2.imshow("proj cube", image_proj)
         # cv2.imshow("adaptive", gray60_adapThresh)
         # cv2.imshow("adaptive_gauss", gray60_adapGaussThresh)
         cv2.imshow("dice", image60)
+        # vid_image.write(image60)
         cv2.imshow("edges", edge)
+        # vid_edges.write(edge)
         cv2.imshow("hough lines", image60_cp)
         cv2.imshow("contours", image_cor)
         cv2.imshow("approx polygons", image_poly)
+        # vid_polygons.write(image_poly)
         # cv2.imshow("camera60 components", imshow_components(out60[1] == 16))
 
         image_temp = imshow_components(out60[1])
-        _, _ = render_cube(project_cube, pos, image_temp, i)
+        # _, _ = render_cube(project_cube, pos, image_temp, 0)
         cv2.imshow("camera60 components", image_temp)
+        # vid_component.write(image_temp)
         # cv2.imshow("corners", corners)
         # cv2.imshow("harris corners", harr_corners)
         # cv2.imshow("contoured image", contoured_image)
@@ -825,6 +858,23 @@ def estimate_pose():
     data_dir = "/home/aditya/real_output/45608/"
     camera_data = "/home/aditya/real_output/45608/camera_data.dat"
     log_reader = tricamera.LogReader(camera_data)
+    vid_output = '/home/aditya/output/gifvids/optimisation/'
+    fourcc = ('M', 'J', 'P', 'G')
+
+
+    vid_camera_pose = cv2.VideoWriter(vid_output+'camera_pose.avi',
+                                   cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'),
+                                  1, (270, 270))
+    vid_components = cv2.VideoWriter(vid_output+'components.avi',
+                                   cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'),
+                                  1, (270, 270))
+
+    path = '/home/aditya/output/gifvids/optimisation/optimising.avi'
+    vid_optimising = cv2.VideoWriter(path, cv2.VideoWriter_fourcc('M', 'J',
+                                                           'P', 'G'),
+                         15, (270, 270))
+
+
 
     # cube projection instance
     project_cube = ProjectCube()
@@ -988,7 +1038,8 @@ def estimate_pose():
                 # calculate gradients
                 # update
                 # visualise
-                optimiser = HausdorffOptim(target_poly, project_cube, image_optim)
+                optimiser = HausdorffOptim(target_poly, project_cube,
+                                           vid_optimising, image_optim)
                 position_dice = optimiser.fit(i, image_optim)
                 print("position of the dice is: {}, {}, 0.01".format(position_dice[0],
                                                                      position_dice[1]))
@@ -1088,6 +1139,8 @@ class DicePose:
         # store arena pose
         self.arena_perspective_pose = {}
 
+        project_cube = ProjectCube()
+
         for i in range(3):
             image = self.images[i]
             mask = self.masks[i]
@@ -1161,16 +1214,30 @@ class DicePose:
                 init_pose = [0.0, 0.0]
                 optimiser = HausdorffOptim(target_poly, project_cube)
                 position_dice = optimiser.fit(i)
-                np.append(position_dice, 0.01)
+                position_dice = np.append(position_dice, 0.01)
                 arena_pose.append(position_dice)
 
             self.arena_perspective_pose['camera_{}'.format(i+1)] = arena_pose
+            ############################
+            #  delete after debugging  #
+            ############################
+
+            # pose_image = np.copy(image)
+            # for pose in arena_pose:
+            #     _, pose_image = render_cube(project_cube, pose,
+            #                                 pose_image, i)
+            # cv2.imshow('final pose from camera {}'.format(i), pose_image)
+            # cv2.waitKey(33)
 
 
     def resolve(self):
         """resolve.
         resolves estimated poses from each camera and creates a queue of
-        estimated poses. This is what the state machine will interact with
+        estimated poses. This is what the state machine will interact with.
+
+        The function returns a python Queue object, you can use this object to
+        pop poses in a fifo format. The reason for this is that the moment a
+        dice has been moved you need to re-estimate it's pose
         """
 
         # self.dice_pose_q = Queue(maxsize=rearrange_dice.NUM_DICE)
@@ -1190,21 +1257,12 @@ class DicePose:
 
         return self.dice_pose_q
 
-
     def _check_proximity(self, pose):
-        if self.dice_pose_q.empty():
-            self.dice_pose_q.put(pose)
-            return False
-
         for dice in list(self.dice_pose_q.queue):
-            if (abs(pose[0]-dice[0])<0.01 or abs(pose[1]-dice[1]) < 0.01):
+            if (abs(pose[0]-dice[0])<0.01 and abs(pose[1]-dice[1]) < 0.01):
                 return False
 
         return True
-
-
-
-
 
 if __name__ == "__main__":
     # main()

@@ -1,5 +1,5 @@
 
-from mp.const import MU, VIRTUAL_CUBOID_HALF_SIZE, INIT_JOINT_CONF
+from mp.const import MU, VIRTUAL_CUBOID_HALF_SIZE, INIT_JOINT_CONF, DICE_SIZE, DICE_HALF_SIZE
 from mp.utils import Transform, keep_state
 from mp.grasping.ik import IKUtils
 from mp.grasping.force_closure import CuboidForceClosureTest, CoulombFriction
@@ -18,6 +18,21 @@ def get_finger_configuration(env, pos, quat):
     """
 
     primitive = FingerPrimitives(env, pos, quat)
+    fing_mov = primitive.get_heuristic_grasps()
+    return fing_mov
+
+def get_finger_configuration_dice(env, pos, quat):
+    """get_finger_configuration.
+    Retrieves finger to touch the closest centre of the cube. It returns a
+    list of `Grasps` that carry out this action,
+
+    Args:
+        env: Simulation/Real environment
+        pos: position of the cube
+        quat: orientation of the cube
+    """
+
+    primitive = FingerPrimitives(env, pos, quat, halfsize=DICE_HALF_SIZE+0.007)
     fing_mov = primitive.get_heuristic_grasps()
     return fing_mov
 
@@ -114,8 +129,8 @@ def get_all_heuristic_grasps(half_size, object_ori):
         object_ori: orientation of the cube.
     """
     return (
-        get_two_sided_heurictic_grasps(half_size, object_ori)
-        + get_three_sided_heuristic_grasps(half_size, object_ori)
+        get_three_sided_heuristic_grasps(half_size, object_ori)
+        + get_two_sided_heurictic_grasps(half_size, object_ori)
     )
     # return (
     #     get_two_finger_heurictic_grasps(half_size, object_ori) +
@@ -171,9 +186,9 @@ class FingerPrimitives:
         Args:
             points_base:
         """
-        if not self.tip_solver.force_closure_test(self.T_cube_to_base,
-                                                  points_base):
-            return True, None
+        # if not self.tip_solver.force_closure_test(self.T_cube_to_base,
+        #                                           points_base):
+        #     return True, None
         if self.ignore_collision:
             q = self.ik_utils._sample_ik(points_base)
         elif self.allow_partial_sol:
@@ -259,11 +274,13 @@ class FingerPrimitives:
             finger: finger to be moved, can take a value between 0-2
         """
         _, _, permutations_by_cost = self.assign_positions_to_fingers(tips)
+        __import__('pudb').set_trace()
         for perm in permutations_by_cost:
             ordered_tips = tips[perm, :]
             should_reject, q = self._reject(ordered_tips)
             if not should_reject:
                 # use INIT_JOINT_CONF for tip positions that were not solvable
+                __import__('pudb').set_trace()
                 valid_tips = [0, 1, 2]
                 if self.allow_partial_sol:
                     for i in range(3):
@@ -319,6 +336,7 @@ class FingerPrimitives:
 
                 # transform the grasp points estimated on the cube to the
                 # Trifinger base coordinate system.
+                __import__('pudb').set_trace()
                 tips = self.T_cube_to_base(points)
                 # NOTE: we sacrifice a bit of speed by not using "yield", however,
                 # context manager doesn't work as we want if we use "yield".
@@ -328,8 +346,9 @@ class FingerPrimitives:
                 #     yield grasp
 
                 # retrieve feasible grasps for finger 0
-                ret += [grasp for grasp in
-                        self.get_feasible_grasps_from_tips(tips, 0)]
+                for finger in [0, 1, 2]:
+                    ret += [grasp for grasp in
+                            self.get_feasible_grasps_from_tips(tips, finger)]
             return ret
 
     def get_custom_grasp(self, base_tip_pos):

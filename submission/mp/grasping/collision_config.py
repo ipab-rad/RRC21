@@ -8,7 +8,10 @@ class CollisionConfig:
         self.finger_id = env.platform.simfinger.finger_id
         self.tip_ids = env.platform.simfinger.pybullet_tip_link_indices
         self.link_ids = env.platform.simfinger.pybullet_link_indices
-        self.cube_id = env.platform.cube._object_id
+        if env.platform.object_type.value == 2:
+            self.cube_id = env.platform.dice[0]._object_id
+        else:
+            self.cube_id = env.platform.cube._object_id
         self. disabled_collisions = [((self.finger_id, tip_id), (self.cube_id, -1))
                                      for tip_id in self.tip_ids]
 

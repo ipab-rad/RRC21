@@ -73,3 +73,7 @@
   - [ ] ensure that `ProjectCube` takes in correct camera parameters
 - [ ] What is the reason for frameskip
 - [ ] make state machine consumable by dice env
+- [ ] make fingers move dice
+  - [ ] integrate dice pose with finger primitives
+  - [ ] right now only finger 1 is moving stuff around, make all 3
+  - [ ] make fingers move the dice to goal

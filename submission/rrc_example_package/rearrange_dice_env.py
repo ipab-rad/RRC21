@@ -20,6 +20,9 @@ from trifinger_cameras.utils import convert_image
 import cv2
 
 
+from env.pinocchio_utils import PinocchioUtils
+
+
 CONFIG_DIR = pathlib.Path("/etc/trifingerpro")
 
 
@@ -68,6 +71,9 @@ class RealRobotRearrangeDiceEnv(gym.GoalEnv):
         if goal is not None:
             task.validate_goal(goal)
         self.goal = goal
+
+        # object that keeps a list of dice pose
+        self.dice_pose = None
 
         self.action_type = action_type
 
@@ -137,6 +143,7 @@ class RealRobotRearrangeDiceEnv(gym.GoalEnv):
                 "achieved_goal": mask_space,
             }
         )
+        self.pinocchio_utils = PinocchioUtils()
 
     def compute_reward(
         self,
@@ -320,6 +327,19 @@ class RealRobotRearrangeDiceEnv(gym.GoalEnv):
 
         return observation
 
+    def set_pose_queue(self, dice_pose):
+        self.dice_pose = dice_pose
+        return
+
+    def yield_pose(self):
+        if self.dice_pose is None:
+            yield None
+        elif self.dice_pose.empty():
+            yield None
+        else:
+            pose = self.dice_pose.get()
+            yield pose
+
 class SimRearrangeDiceEnv(gym.GoalEnv):
     """Gym environment for rearranging dice with a TriFingerPro robot."""
 
@@ -351,6 +371,9 @@ class SimRearrangeDiceEnv(gym.GoalEnv):
         self.goal = goal
 
         self.action_type = action_type
+
+        # class object to keep a queue of dice poses
+        self.dice_pose = None
 
         if step_size < 1:
             raise ValueError("step_size cannot be less than 1.")
@@ -540,6 +563,7 @@ class SimRearrangeDiceEnv(gym.GoalEnv):
                 "achieved_goal": mask_space,
             }
         )
+        self.pinocchio_utils = PinocchioUtils()
 
     def compute_reward(
         self,
@@ -708,3 +732,16 @@ class SimRearrangeDiceEnv(gym.GoalEnv):
         self.step_count = 0
 
         return self._create_observation(0, self._initial_action)
+
+    def set_pose_queue(self, dice_pose):
+        self.dice_pose = dice_pose
+        return
+
+    def yield_pose(self):
+        if self.dice_pose is None:
+            yield None
+        elif self.dice_pose.empty():
+            yield None
+        else:
+            pose = self.dice_pose.get()
+            yield pose

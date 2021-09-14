@@ -2,6 +2,7 @@
 import numpy as np
 from trifinger_simulation.tasks import move_cube
 from trifinger_simulation.trifinger_platform import TriFingerPlatform
+from trifinger_simulation.tasks import rearrange_dice
 
 COLLISION_TOLERANCE = 3.5 * 1e-03
 MU = 0.5
@@ -13,6 +14,11 @@ MIN_HEIGHT = min(CUBOID_HALF_SIZE)
 MAX_HEIGHT = move_cube._max_height
 ARENA_RADIUS = move_cube._ARENA_RADIUS
 AVG_POSE_STEPS = 200
+
+# dice constants
+DICE_SIZE = np.array((rearrange_dice.DIE_WIDTH, rearrange_dice.DIE_WIDTH,
+                     rearrange_dice.DIE_WIDTH))
+DICE_HALF_SIZE = DICE_SIZE / 2
 # INIT_JOINT_CONF = TriFingerPlatform.spaces.robot_position.default
 INIT_JOINT_CONF = np.array([0.0, 0.9, -2.0, 0.0, 0.9, -2.0, 0.0, 0.9, -2.0], dtype=np.float32)
 CONTRACTED_JOINT_CONF = np.array([0.0, 1.4, -2.4, 0.0, 1.4, -2.4, 0.0, 1.4, -2.4], dtype=np.float32)

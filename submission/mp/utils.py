@@ -181,7 +181,10 @@ class keep_state:
     def __init__(self, env):
         self.finger_id = env.platform.simfinger.finger_id
         self.joints = env.platform.simfinger.pybullet_link_indices
-        self.cube_id = env.platform.cube._object_id
+        if env.platform.object_type.value == 2:
+            self.cube_id = env.platform.dice[0]._object_id
+        else:
+            self.cube_id = env.platform.cube._object_id
 
     def __enter__(self):
         self.state_id = p.saveState()
