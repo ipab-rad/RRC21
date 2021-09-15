@@ -17,6 +17,7 @@ from .fingers import get_finger_configuration, get_finger_configuration_dice
 from mp import grasping
 from mp.const import CONTRACTED_JOINT_CONF, INIT_JOINT_CONF
 from dice_pose.estimate_dice_pose import DicePose
+import traceback
 
 POS1 = np.array([0.0, 1.4, -2.4, 0.0, 1.4, -2.4, 0.0, 1.4, -2.4], dtype=np.float32)
 POS2 = np.array([0.0, 1.4, -2.2, 0.0, 1.4, -2.4, 0.0, 1.4, -2.4], dtype=np.float32)
@@ -60,6 +61,7 @@ class OpenLoopState(State):
                 return self.next_state(obs, info)
             else:
                 print(f"Caught error: {e}")
+                traceback.print_exc()
                 return self.get_action(frameskip=0), self.failure_state, info
 
 class MoveFingerState(OpenLoopState):
