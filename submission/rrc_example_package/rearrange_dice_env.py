@@ -316,6 +316,7 @@ class RealRobotRearrangeDiceEnv(gym.GoalEnv):
 
         self.platform = robot_fingers.TriFingerPlatformFrontend()
         print('DEBUG statement: type of platform {}'.format(type(self.platform)))
+        print('DEBUG statement: attributes of platform {}'.format(type(self.platform.__dict__)))
 
         # if no goal is given, sample one randomly
         if self.goal is None:
