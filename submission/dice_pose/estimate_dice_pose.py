@@ -767,30 +767,51 @@ def visualise_blobs():
         # draw_line(image_proj, points)
 
         cv2.imshow("camera60", gray60_thresh)
-        # vid_seg.write(gray60_thresh)
+        vid_seg.write(gray60_thresh)
         cv2.imshow("proj cube", image_proj)
+        cv2.imwrite("/home/aditya/output/gifvids/proj_cube.jpg", image_proj)
         # cv2.imshow("adaptive", gray60_adapThresh)
         # cv2.imshow("adaptive_gauss", gray60_adapGaussThresh)
         cv2.imshow("dice", image60)
-        # vid_image.write(image60)
+        cv2.imwrite("/home/aditya/output/gifvids/dice.jpg", image60)
+        vid_image.write(image60)
         cv2.imshow("edges", edge)
-        # vid_edges.write(edge)
+        cv2.imwrite("/home/aditya/output/gifvids/edges.jpg", edge)
+        vid_edges.write(edge)
         cv2.imshow("hough lines", image60_cp)
+        cv2.imwrite("/home/aditya/output/gifvids/hough.jpg", image60_cp)
         cv2.imshow("contours", image_cor)
+        cv2.imwrite("/home/aditya/output/gifvids/contours.jpg", image_cor)
         cv2.imshow("approx polygons", image_poly)
-        # vid_polygons.write(image_poly)
+        cv2.imwrite("/home/aditya/output/gifvids/polygon.jpg", image_poly)
+        vid_polygons.write(image_poly)
         # cv2.imshow("camera60 components", imshow_components(out60[1] == 16))
 
         image_temp = imshow_components(out60[1])
         # _, _ = render_cube(project_cube, pos, image_temp, 0)
         cv2.imshow("camera60 components", image_temp)
-        # vid_component.write(image_temp)
+        cv2.imwrite("/home/aditya/output/gifvids/connectedcomps.jpg", image_temp)
+        vid_component.write(image_temp)
         # cv2.imshow("corners", corners)
         # cv2.imshow("harris corners", harr_corners)
         # cv2.imshow("contoured image", contoured_image)
         if cv2.waitKey(33) == ord('q'):
+            vid_dicegray.release()
+            vid_seg.release()
+            vid_image.release()
+            vid_edges.release()
+            vid_polygons.release()
+            vid_component.release()
+
             sys.exit()
 
+
+    vid_dicegray.release()
+    vid_seg.release()
+    vid_image.release()
+    vid_edges.release()
+    vid_polygons.release()
+    vid_component.release()
 
     return
 
@@ -904,31 +925,31 @@ def estimate_pose():
         ######################################################################
         #                         debugging DicePose                         #
         ######################################################################
-        images = [image60, image180, image300]
-        masks = [mask60, mask180, mask300]
-        pose_estimator = DicePose(images, masks)
-        pose_estimator.estimate()
+        # images = [image60, image180, image300]
+        # masks = [mask60, mask180, mask300]
+        # pose_estimator = DicePose(images, masks)
+        # pose_estimator.estimate()
 
-        dice_poses = pose_estimator.resolve()
-        arena_pose = list(dice_poses.queue)
-        for i in range(3):
-            final_pose_image = np.copy(images[i])
-            for pos in arena_pose:
-                _, final_pose_image = render_cube(project_cube, pos,
-                                                  final_pose_image, i)
+        # dice_poses = pose_estimator.resolve()
+        # arena_pose = list(dice_poses.queue)
+        # for i in range(3):
+        #     final_pose_image = np.copy(images[i])
+        #     for pos in arena_pose:
+        #         _, final_pose_image = render_cube(project_cube, pos,
+        #                                           final_pose_image, i)
 
-            cv2.imshow("final pose estimation for camera {}".format(i),
-                       final_pose_image)
-            key = cv2.waitKey(0)
-            if key == ord('q'):
-                sys.exit()
-            elif key == ord('c'):
-                continue
-
-
+        #     cv2.imshow("final pose estimation for camera {}".format(i),
+        #                final_pose_image)
+        #     key = cv2.waitKey(0)
+        #     if key == ord('q'):
+        #         sys.exit()
+        #     elif key == ord('c'):
+        #         continue
 
 
-        sys.exit()
+
+
+        # sys.exit()
 
         ######################################################################
         #                   compute connected componenets                    #
@@ -1042,7 +1063,8 @@ def estimate_pose():
                 # update
                 # visualise
                 optimiser = HausdorffOptim(target_poly, project_cube,
-                                           vid_optimising, image_optim)
+                                           vid_optimising, image_optim,
+                                           write_vid=True)
                 position_dice = optimiser.fit(i, image_optim)
                 print("position of the dice is: {}, {}, 0.01".format(position_dice[0],
                                                                      position_dice[1]))
@@ -1066,7 +1088,13 @@ def estimate_pose():
                 # draw_points(image_temp, out60[3][16])
                 draw_point(image_temp, blobs[i][3][blob_num])
                 cv2.imshow("camera {} components".format(i), image_temp)
+                vid_components.write(image_temp)
+                cv2.imwrite("/home/aditya/output/gifvids/components.jpg",
+                            image_temp)
                 cv2.imshow("estimated pose from camera {}".format(i), pose_image)
+                vid_camera_pose.write(pose_image)
+                cv2.imwrite("/home/aditya/output/gifvids/pose_estimation.jpg",
+                            image_temp)
 
 
 
@@ -1079,6 +1107,9 @@ def estimate_pose():
                        final_pose_image)
             key = cv2.waitKey(0)
             if key == ord('q'):
+                vid_camera_pose.release()
+                vid_components.release()
+                vid_optimising.release()
                 sys.exit()
             elif key == ord('c'):
                 continue

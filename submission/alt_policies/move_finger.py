@@ -155,7 +155,6 @@ class MoveFingerForDice(OpenLoopState):
         for pos in actions:
             yield self.get_action(position=pos, frameskip=1), info
 
-
 class EstimateDicePose(OpenLoopState):
     def __init__(self, env, steps=300):
         super().__init__(env)
@@ -174,9 +173,6 @@ class EstimateDicePose(OpenLoopState):
         dice_pose = pose_estimator.resolve()
         self.env.set_pose_queue(dice_pose)
         return
-
-
-
 
 
 
