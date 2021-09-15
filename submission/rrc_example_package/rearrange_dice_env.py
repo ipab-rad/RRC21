@@ -315,6 +315,7 @@ class RealRobotRearrangeDiceEnv(gym.GoalEnv):
             raise RuntimeError("Once started, this environment cannot be reset.")
 
         self.platform = robot_fingers.TriFingerPlatformFrontend()
+        print('DEBUG statement: type of platform {}'.format(type(self.platform)))
 
         # if no goal is given, sample one randomly
         if self.goal is None:
