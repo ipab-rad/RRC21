@@ -32,7 +32,8 @@ def get_finger_configuration_dice(env, pos, quat):
         quat: orientation of the cube
     """
 
-    primitive = FingerPrimitives(env, pos, quat, halfsize=DICE_HALF_SIZE+0.007)
+    primitive = FingerPrimitives(env, pos, quat, halfsize=DICE_HALF_SIZE+0.01,
+                                ignore_collision=False, allow_partial_sol=True)
     fing_mov = primitive.get_heuristic_grasps()
     return fing_mov
 
@@ -274,13 +275,11 @@ class FingerPrimitives:
             finger: finger to be moved, can take a value between 0-2
         """
         _, _, permutations_by_cost = self.assign_positions_to_fingers(tips)
-        __import__('pudb').set_trace()
         for perm in permutations_by_cost:
             ordered_tips = tips[perm, :]
             should_reject, q = self._reject(ordered_tips)
             if not should_reject:
                 # use INIT_JOINT_CONF for tip positions that were not solvable
-                __import__('pudb').set_trace()
                 valid_tips = [0, 1, 2]
                 if self.allow_partial_sol:
                     for i in range(3):
@@ -289,10 +288,10 @@ class FingerPrimitives:
                             q[i * 3:(i + 1) * 3] = INIT_JOINT_CONF[i * 3:(i + 1) * 3]
 
                 # move only designated finger
-                for i in range(3):
-                    if (i != finger):
-                        valid_tips.remove(i)
-                        q[i * 3:(i + 1) * 3] = INIT_JOINT_CONF[i * 3:(i + 1) * 3]
+                # for i in range(3):
+                #     if (i != finger):
+                #         valid_tips.remove(i)
+                #         q[i * 3:(i + 1) * 3] = INIT_JOINT_CONF[i * 3:(i + 1) * 3]
 
 
                 yield Grasp(self.T_base_to_cube(ordered_tips),

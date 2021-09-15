@@ -52,7 +52,7 @@ class RealRobotRearrangeDiceEnv(gym.GoalEnv):
         goal: typing.Optional[task.Goal] = None,
         action_type: ActionType = ActionType.POSITION,
         step_size: int = 1,
-        sim=True,
+        sim=False,
         vis=True,
     ):
         """Initialize.
@@ -83,6 +83,7 @@ class RealRobotRearrangeDiceEnv(gym.GoalEnv):
 
         # will be initialized in reset()
         self.platform = None
+        self.simulation = sim
 
         # load camera parameters
         self.camera_params = load_camera_parameters(
@@ -138,6 +139,7 @@ class RealRobotRearrangeDiceEnv(gym.GoalEnv):
                         "torque": robot_torque_space,
                     }
                 ),
+                "robot_tip_positions": robot_position_space,
                 "action": self.action_space,
                 "desired_goal": mask_space,
                 "achieved_goal": mask_space,
@@ -225,6 +227,7 @@ class RealRobotRearrangeDiceEnv(gym.GoalEnv):
                 "torque": robot_observation.torque,
                 "tip_force": robot_observation.tip_force,
             },
+            "robot_tip_positions": np.array(self.pinocchio_utils.forward_kinematics(robot_observation.position)),
             "action": action,
             "desired_goal": self.goal_masks,
             "achieved_goal": segmentation_masks,
@@ -350,7 +353,7 @@ class SimRearrangeDiceEnv(gym.GoalEnv):
         step_size: int = 1,
         visualization: bool = True,
         frameskip=3,
-        sim=False,
+        sim=True,
         rank=0,
     ):
         """Initialize.
@@ -383,6 +386,7 @@ class SimRearrangeDiceEnv(gym.GoalEnv):
 
         # will be initialized in reset()
         self.platform = None
+        self.simulation = sim
 
         # Set camera parameters as used in simulation
         # view 1
@@ -607,7 +611,6 @@ class SimRearrangeDiceEnv(gym.GoalEnv):
         robot_observation = self.platform.get_robot_observation(t)
         camera_observation = self.platform.get_camera_observation(t)
 
-        # __import__('pudb').set_trace()
         images = [
             cv2.cvtColor(c.image, cv2.COLOR_RGB2BGR) for c in
             camera_observation.cameras
@@ -624,6 +627,7 @@ class SimRearrangeDiceEnv(gym.GoalEnv):
                 "torque": robot_observation.torque,
                 "tip_force": robot_observation.tip_force,
             },
+            "robot_tip_positions": np.array(self.pinocchio_utils.forward_kinematics(robot_observation.position)),
             "action": action,
             "desired_goal": self.goal_masks,
             "achieved_goal": segmentation_masks,

@@ -145,7 +145,6 @@ class MoveFingerForDice(OpenLoopState):
                 print(f"Caught error: {e}")
                 return self.get_action(frameskip=0), self.failure_state, info
 
-        __import__('pudb').set_trace()
         fing_mov = get_finger_configuration_dice(self.env, pose, (0, 0, 0, 1))
         info['grasp'] = fing_mov[0]
         actions = grasping.get_grasp_approach_actions(self.env, obs,
@@ -167,7 +166,8 @@ class EstimateDicePose(OpenLoopState):
             yield self.get_action(position=pos, frameskip=self.steps // 2), info
 
     def _estimate_pose(self, obs):
-        pose_estimator = DicePose(obs['camera_images'], obs['achieved_goal'])
+        pose_estimator = DicePose(obs['camera_images'], obs['achieved_goal'],
+                                  self.env.camera_params)
         pose_estimator.estimate()
         dice_pose = pose_estimator.resolve()
         self.env.set_pose_queue(dice_pose)

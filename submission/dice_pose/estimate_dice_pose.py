@@ -266,6 +266,9 @@ class ProjectCube:
         )
         pass
 
+    def set_camera_params(self, camera_params):
+        self.camera_params = camera_params
+
     def projectPoints(self, pos: Position, camera):
         """
         Project the given 3d position onto the camera's perspective
@@ -1110,9 +1113,10 @@ class DicePose:
     # TODO: either thread it, or create subprocesses <10-09-21, yourname> #
     """
 
-    def __init__(self, images, masks):
+    def __init__(self, images, masks, camera_params=None):
         self.images = images
         self.masks = masks
+        self.camera_params = camera_params
         return
 
     def estimate(self):
@@ -1135,6 +1139,8 @@ class DicePose:
 
         # camera projection for hausdorff
         project_cube = ProjectCube()
+        if self.camera_params is not None:
+            project_cube.set_camera_params(self.camera_params)
 
         # store arena pose
         self.arena_perspective_pose = {}
