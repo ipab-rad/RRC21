@@ -52,6 +52,7 @@ class RealRobotRearrangeDiceEnv(gym.GoalEnv):
         goal: typing.Optional[task.Goal] = None,
         action_type: ActionType = ActionType.POSITION,
         step_size: int = 1,
+        frameskip=3,
         sim=False,
         vis=True,
     ):
@@ -68,6 +69,7 @@ class RealRobotRearrangeDiceEnv(gym.GoalEnv):
         # Basic initialization
         # ====================
 
+        self.frameskip = frameskip
         if goal is not None:
             task.validate_goal(goal)
         self.goal = goal
