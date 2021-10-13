@@ -114,7 +114,6 @@ class MoveFingerToObjState(OpenLoopState):
         #     yield self.get_action(position=pos, frameskip=self.steps // 2), info
 
         # TODO: need to ensure that fing_mov is a `Grasp` object
-        __import__('pudb').set_trace()
         fing_mov = get_finger_configuration(self.env,
                                            obs['object_position'],
                                            obs['object_orientation'])
